@@ -34,7 +34,8 @@ def str2index(str_):
     # clean white space
     str_ = ' '.join(str_.split())
     # remove punctuation and make lower case
-    str_ = str_.translate(None, string.punctuation).lower()
+    translator = str.maketrans('', '', string.punctuation)
+    str_ = str_.translate(translator).lower()
 
     res = []
     for ch in str_:

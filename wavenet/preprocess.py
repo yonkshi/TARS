@@ -3,7 +3,7 @@ import pandas as pd
 import glob
 import csv
 import librosa
-import scikits.audiolab
+import soundfile
 import wavenet.data as data
 import os
 import subprocess
@@ -115,7 +115,7 @@ def process_libri(csv_file, category):
         print("LibriSpeech corpus preprocessing (%d / %d) - '%s']" % (i, len(wave_files), wave_file))
 
         # load flac file
-        wave, sr, _ = scikits.audiolab.flacread(wave_file)
+        wave, sr = soundfile.read(wave_file)
 
         # get mfcc feature
         mfcc = librosa.feature.mfcc(wave, sr=16000)
@@ -215,46 +215,51 @@ if not os.path.exists('asset/data/preprocess/mfcc'):
 # Run pre-processing for training
 #
 
-# VCTK corpus
+# LibriSpeech corpus for training
 csv_f = open('asset/data/preprocess/meta/train.csv', 'w')
-process_vctk(csv_f)
+process_libri(csv_f, 'dev-clean')
 csv_f.close()
 
-# LibriSpeech corpus for train
-csv_f = open('asset/data/preprocess/meta/train.csv', 'a+')
-process_libri(csv_f, 'train-clean-360')
-csv_f.close()
-
-# TEDLIUM corpus for train
-csv_f = open('asset/data/preprocess/meta/train.csv', 'a+')
-process_ted(csv_f, 'train')
-csv_f.close()
+# # VCTK corpus
+# csv_f = open('asset/data/preprocess/meta/train.csv', 'w')
+# process_vctk(csv_f)
+# csv_f.close()
+#
+# # LibriSpeech corpus for train
+# csv_f = open('asset/data/preprocess/meta/train.csv', 'a+')
+# process_libri(csv_f, 'train-clean-360')
+# csv_f.close()
+#
+# # TEDLIUM corpus for train
+# csv_f = open('asset/data/preprocess/meta/train.csv', 'a+')
+# process_ted(csv_f, 'train')
+# csv_f.close()
 
 #
 # Run pre-processing for validation
 #
 
-# LibriSpeech corpus for valid
-csv_f = open('asset/data/preprocess/meta/valid.csv', 'w')
-process_libri(csv_f, 'dev-clean')
-csv_f.close()
+# LibriSpeech corpus for training
+# csv_f = open('asset/data/preprocess/meta/valid.csv', 'w')
+# process_libri(csv_f, 'dev-clean')
+# csv_f.close()
 
-# TEDLIUM corpus for valid
-csv_f = open('asset/data/preprocess/meta/valid.csv', 'a+')
-process_ted(csv_f, 'dev')
-csv_f.close()
+# # TEDLIUM corpus for valid
+# csv_f = open('asset/data/preprocess/meta/valid.csv', 'a+')
+# process_ted(csv_f, 'dev')
+# csv_f.close()
 
 #
 # Run pre-processing for testing
 #
 
-# LibriSpeech corpus for test
-csv_f = open('asset/data/preprocess/meta/test.csv', 'w')
-process_libri(csv_f, 'test-clean')
-csv_f.close()
-
-# TEDLIUM corpus for test
-csv_f = open('asset/data/preprocess/meta/test.csv', 'a+')
-process_ted(csv_f, 'test')
-csv_f.close()
+# # LibriSpeech corpus for test
+# csv_f = open('asset/data/preprocess/meta/test.csv', 'w')
+# process_libri(csv_f, 'test-clean')
+# csv_f.close()
+#
+# # TEDLIUM corpus for test
+# csv_f = open('asset/data/preprocess/meta/test.csv', 'a+')
+# process_ted(csv_f, 'test')
+# csv_f.close()
 
