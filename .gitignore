@@ -1,12 +1,7 @@
-# project specific
-
+# Manually added
 data/*
 asset/
-
-
-
-
-
+output/*
 
 
 # Byte-compiled / optimized / DLL files
