@@ -1,5 +1,6 @@
 from google.cloud import texttospeech
 
+
 def synthesize_text(text):
     """Synthesizes speech from the input string of text."""
     client = texttospeech.TextToSpeechClient()
@@ -21,3 +22,5 @@ def synthesize_text(text):
     with open('output.mp3', 'wb') as out:
         out.write(response.audio_content)
         print('Audio content written to file "output.mp3"')
+
+synthesize_text("Hello, this is a test sentence. How are you doing?")
