@@ -1,13 +1,6 @@
-# project specific
-
+# Manually added
 data/*
-
-
-
-
-
-
-
+output/*
 
 # Byte-compiled / optimized / DLL files
 VCTK/*
