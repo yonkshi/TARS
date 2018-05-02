@@ -7,6 +7,7 @@ path = "../VCTK/VCTK-Corpus/txt/"
 dirs = os.listdir(path)
 start_time = time.time()
 for diri in range(0,len(dirs)):
+    print("Starting to generate sound files for folder "+dirs[diri])
     filenames = os.listdir(path+dirs[diri])
     sentences = []
 
