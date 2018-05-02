@@ -2,7 +2,7 @@
 data/*
 asset/
 output/*
-
+google-cloud-sdk
 
 # Byte-compiled / optimized / DLL files
 VCTK/*
