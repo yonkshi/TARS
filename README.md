@@ -18,3 +18,5 @@ MacOS: (Courtesy of [this person](https://github.com/facebookresearch/wav2letter
 brew install libsndfile --with-lame --with-flac --with-libvorbis
 brew link --overwrite libsndfile
 ```
+
+Also, installed `ffmpeg`

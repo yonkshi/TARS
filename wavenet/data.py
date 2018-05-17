@@ -1,4 +1,5 @@
-import sugartensor as tf
+#import sugartensor as tf
+import tensorflow as tf
 import numpy as np
 import csv
 import string
@@ -75,6 +76,7 @@ def _load_mfcc(src_list):
     # decode string to integer
     label = np.fromstring(label, np.int)
 
+
     # load mfcc
     mfcc = np.load(mfcc_file, allow_pickle=False)
 
@@ -124,6 +126,7 @@ class SpeechCorpus(object):
         label_q, mfcc_file_q \
             = tf.train.slice_input_producer([label_t, mfcc_file_t], shuffle=True)
 
+        # TODO Yonk add queue runner mechanism
         # create label, mfcc queue
         label_q, mfcc_q = _load_mfcc(source=[label_q, mfcc_file_q],
                                      dtypes=[tf.sg_intx, tf.sg_floatx],
@@ -142,6 +145,3 @@ class SpeechCorpus(object):
         # calc total batch count
         self.num_batch = len(label) // batch_size
 
-        # print info
-        tf.sg_info('%s set loaded.(total data=%d, total batch=%d)'
-                   % (set_name.upper(), len(label), self.num_batch))
