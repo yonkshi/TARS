@@ -20,3 +20,4 @@ brew link --overwrite libsndfile
 ```
 
 Also, installed `ffmpeg`
+![alt text](https://i.pinimg.com/originals/6a/42/ed/6a42ed5bdb29da3b2328f961deca15f8.jpg)

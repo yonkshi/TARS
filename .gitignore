@@ -3,7 +3,6 @@ data/*
 asset/
 output/*
 
-
 # Byte-compiled / optimized / DLL files
 VCTK/*
 .idea/*
