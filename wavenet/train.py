@@ -1,6 +1,8 @@
-import sugartensor as tf
+import tensorflow as tf
 from wavenet.data import SpeechCorpus, voca_size
 from wavenet.model import *
+import wavenet.conf as conf
+
 
 
 __author__ = 'namju.kim@kakaobrain.com'
@@ -13,41 +15,51 @@ __author__ = 'namju.kim@kakaobrain.com'
 #
 # hyper parameters
 #
-
-batch_size = 16    # total batch size
-
+max_episode = 15
+learning_rate = 1e-4
 #
 # inputs
 #
 
 # corpus input tensor
-data = SpeechCorpus(batch_size=batch_size)
+data = SpeechCorpus(batch_size=conf.BATCH_SIZE)
 
-# mfcc feature of audio
-inputs = data.mfcc
-# target sentence label
-labels = data.mfcc
+
+# # mfcc feature of audio queue
+# inputs = data.mfcc
+# # target sentence label queue
+# labels = data.mfcc
 
 # sequence length except zero-padding
-seq_len = []
-for input_ in inputs:
-    input_ = tf.reduce_sum(input_, axis=2)
-    input_ = tf.not_equal(input_, 0.)
-    input_ = tf.cast(input_, 'int')
-    input_ = tf.reduce_sum(input_, axis=1)
-    seq_len.append(input_)
+# seq_len = []
+# for input_ in inputs:
+#     input_ = tf.reduce_sum(input_, axis=2)
+#     input_ = tf.not_equal(input_, 0.)
+#     input_ = tf.cast(input_, 'int')
+#     input_ = tf.reduce_sum(input_, axis=1)
+#     seq_len.append(input_)
 
 
 # parallel loss tower
-@tf.sg_parallel
-def get_loss(opt):
-    # encode audio feature
-    logit = get_logit_keras(opt.input[opt.gpu_index], voca_size=voca_size)
+y_batch, x_batch = data.next_batch
+model = get_model(x_batch, voca_size=voca_size)
+def loss(inputs, targets, seq_len):
     # CTC loss
-    return logit.sg_ctc(target=opt.target[opt.gpu_index], seq_len=opt.seq_len[opt.gpu_index])
+    return model.sg_ctc(target=targets, seq_len=seq_len)
 
 #
 # train
 #
-tf.sg_train(lr=0.0001, loss=get_loss(input=inputs, target=labels, seq_len=seq_len),
-            ep_size=data.num_batch, max_ep=50)
+with tf.Session() as sess:
+    sess.run(tf.global_variables_initializer())
+
+    train_writer = tf.summary.FileWriter('./logs/1/train ', sess.graph)
+    sess.run(data.iterator.initializer)
+
+    for i in range(10):
+        model_ = sess.run(model)
+        print('yo')
+
+
+#tf.sg_train(lr=0.0001, loss=loss,
+#            ep_size=data.num_batch, max_ep=50)

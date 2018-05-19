@@ -1,8 +1,9 @@
-#import sugartensor as tf
+
 import tensorflow as tf
 import numpy as np
 import csv
 import string
+import wavenet.conf as conf
 
 
 __author__ = 'namju.kim@kakaobrain.com'
@@ -67,23 +68,23 @@ def print_index(indices):
 
 
 # real-time wave to mfcc conversion function
-@tf.sg_producer_func
-def _load_mfcc(src_list):
 
-    # label, wave_file
-    label, mfcc_file = src_list
+def _load_mfcc(label, mfcc_file:bytes):
 
     # decode string to integer
-    label = np.fromstring(label, np.int)
+    label_new = np.fromstring(label, np.int)
 
+    mfcc_file_str = mfcc_file.decode()
 
     # load mfcc
-    mfcc = np.load(mfcc_file, allow_pickle=False)
+    mfcc = np.load(mfcc_file_str, allow_pickle=False)
 
     # speed perturbation augmenting
-    mfcc = _augment_speech(mfcc)
+    mfcc = _augment_speech(mfcc).T
 
-    return label, mfcc
+    mfcc = mfcc.astype('float32')
+    label_new = label_new.astype('int32')
+    return label_new, mfcc
 
 
 def _augment_speech(mfcc):
@@ -122,26 +123,24 @@ class SpeechCorpus(object):
         label_t = tf.convert_to_tensor(label)
         mfcc_file_t = tf.convert_to_tensor(mfcc_file)
 
-        # create queue from constant tensor
-        label_q, mfcc_file_q \
-            = tf.train.slice_input_producer([label_t, mfcc_file_t], shuffle=True)
+        # New pipeline
+        datasource = tf.data.Dataset.from_tensor_slices((label_t, mfcc_file_t))
+        dataset = datasource.shuffle(buffer_size=1024)
+        dataset = dataset.map(lambda x, y: tf.py_func(func=_load_mfcc, inp=[x, y], Tout=[tf.int32, tf.float32]),
+                              num_parallel_calls=64)
+        dataset = dataset.prefetch(256)
+        dataset = dataset.padded_batch(batch_size, padded_shapes=([None],[None, conf.FEATURE_DIM]))
 
-        # TODO Yonk add queue runner mechanism
-        # create label, mfcc queue
-        label_q, mfcc_q = _load_mfcc(source=[label_q, mfcc_file_q],
-                                     dtypes=[tf.sg_intx, tf.sg_floatx],
-                                     capacity=256, num_threads=64)
+        self.dataset = dataset
+        self.iterator = dataset.make_initializable_iterator()
+        self.next_batch = self.iterator.get_next()
 
         # create batch queue with dynamic pad
-        batch_queue = tf.train.batch([label_q, mfcc_q], batch_size,
-                                     shapes=[(None,), (20, None)],
-                                     num_threads=64, capacity=batch_size*32,
-                                     dynamic_pad=True)
 
         # split data
-        self.label, self.mfcc = batch_queue
-        # batch * time * dim
-        self.mfcc = self.mfcc.sg_transpose(perm=[0, 2, 1])
+        # self.label, self.mfcc = 1, 2
+        # # batch * time * dim
+        # self.mfcc = self.mfcc.sg_transpose(perm=[0, 2, 1])
         # calc total batch count
-        self.num_batch = len(label) // batch_size
+        #self.num_batch = len(label) // batch_size
 
