@@ -79,12 +79,13 @@ def _load_mfcc(label, mfcc_file:bytes):
     # load mfcc
     mfcc = np.load(mfcc_file_str, allow_pickle=False)
 
+    seq_len = np.array(mfcc.shape).astype('int32')[1] # int32
     # speed perturbation augmenting
     mfcc = _augment_speech(mfcc).T
 
     mfcc = mfcc.astype('float32')
     label_new = label_new.astype('int32')
-    return label_new, mfcc
+    return label_new, mfcc, [seq_len] # stupid batch
 
 
 def _augment_speech(mfcc):
@@ -126,10 +127,10 @@ class SpeechCorpus(object):
         # New pipeline
         datasource = tf.data.Dataset.from_tensor_slices((label_t, mfcc_file_t))
         dataset = datasource.shuffle(buffer_size=1024)
-        dataset = dataset.map(lambda x, y: tf.py_func(func=_load_mfcc, inp=[x, y], Tout=[tf.int32, tf.float32]),
+        dataset = dataset.map(lambda x, y: tf.py_func(func=_load_mfcc, inp=[x, y], Tout=[tf.int32, tf.float32, tf.int32]),
                               num_parallel_calls=64)
         dataset = dataset.prefetch(256)
-        dataset = dataset.padded_batch(batch_size, padded_shapes=([None],[None, conf.FEATURE_DIM]))
+        dataset = dataset.padded_batch(batch_size, padded_shapes=([None],[None, conf.FEATURE_DIM],1))
 
         self.dataset = dataset
         self.iterator = dataset.make_initializable_iterator()

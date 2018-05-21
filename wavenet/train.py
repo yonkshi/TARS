@@ -41,11 +41,14 @@ data = SpeechCorpus(batch_size=conf.BATCH_SIZE)
 
 
 # parallel loss tower
-y_batch, x_batch = data.next_batch
-model = get_model(x_batch, voca_size=voca_size)
-def loss(inputs, targets, seq_len):
-    # CTC loss
-    return model.sg_ctc(target=targets, seq_len=seq_len)
+y_batch, x_batch, seq_length_col = data.next_batch
+wavenet_out = get_model(x_batch, voca_size=voca_size)
+seq_length = tf.transpose(seq_length_col)
+
+wavenet_weights = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='wavenet')
+
+#loss = tf.nn.ctc_loss(wavenet_out, y_batch, seq_length)
+
 
 #
 # train
@@ -57,7 +60,7 @@ with tf.Session() as sess:
     sess.run(data.iterator.initializer)
 
     for i in range(10):
-        model_ = sess.run(model)
+        out1, out2 = sess.run([wavenet_out, y_batch])
         print('yo')
 
 
