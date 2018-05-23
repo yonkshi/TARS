@@ -1,3 +1,4 @@
+from __future__ import absolute_import, division, print_function
 import tensorflow as tf
 from wavenet.data import SpeechCorpus, voca_size
 from wavenet.model import *
@@ -24,30 +25,14 @@ learning_rate = 1e-4
 # corpus input tensor
 data = SpeechCorpus(batch_size=conf.BATCH_SIZE)
 
-
-# # mfcc feature of audio queue
-# inputs = data.mfcc
-# # target sentence label queue
-# labels = data.mfcc
-
-# sequence length except zero-padding
-# seq_len = []
-# for input_ in inputs:
-#     input_ = tf.reduce_sum(input_, axis=2)
-#     input_ = tf.not_equal(input_, 0.)
-#     input_ = tf.cast(input_, 'int')
-#     input_ = tf.reduce_sum(input_, axis=1)
-#     seq_len.append(input_)
-
-
 # parallel loss tower
 y_batch, x_batch, seq_length_col = data.next_batch
 wavenet_out = get_model(x_batch, voca_size=voca_size)
-seq_length = tf.transpose(seq_length_col)
+seq_length = tf.reshape(seq_length_col, [-1])
 
 wavenet_weights = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='wavenet')
 
-#loss = tf.nn.ctc_loss(wavenet_out, y_batch, seq_length)
+#loss = tf.nn.ctc_loss(y_batch, wavenet_out, seq_length)
 
 
 #
@@ -60,7 +45,10 @@ with tf.Session() as sess:
     sess.run(data.iterator.initializer)
 
     for i in range(10):
-        out1, out2 = sess.run([wavenet_out, y_batch])
+        seqlenlenelne = sess.run(seq_length)
+        wavenet_out, y_out, x_out = sess.run([ wavenet_out, y_batch, x_batch])
+
+        #loss = sess.run(loss)
         print('yo')
 
 

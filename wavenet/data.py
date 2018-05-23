@@ -129,8 +129,10 @@ class SpeechCorpus(object):
         dataset = datasource.shuffle(buffer_size=1024)
         dataset = dataset.map(lambda x, y: tf.py_func(func=_load_mfcc, inp=[x, y], Tout=[tf.int32, tf.float32, tf.int32]),
                               num_parallel_calls=64)
+        dataset = dataset.map(lambda label, x, seq: (tf.one_hot(label, voca_size), x, seq))
         dataset = dataset.prefetch(256)
-        dataset = dataset.padded_batch(batch_size, padded_shapes=([None],[None, conf.FEATURE_DIM],1))
+        dataset = dataset.padded_batch(batch_size, padded_shapes=([None, conf.ALPHA_SIZE],[None, conf.FEATURE_DIM],1))
+        #dataset = dataset.map(self.to_sparse_representation)
 
         self.dataset = dataset
         self.iterator = dataset.make_initializable_iterator()
@@ -144,4 +146,12 @@ class SpeechCorpus(object):
         # self.mfcc = self.mfcc.sg_transpose(perm=[0, 2, 1])
         # calc total batch count
         #self.num_batch = len(label) // batch_size
+    def to_sparse_representation(self, labels, x, seq_len):
+        num_val = tf.count_nonzero(labels) # number of ones in tensor
+        values = tf.ones(num_val)
 
+        indices = tf.where(tf.not_equal(labels, 0))
+        sparse_label = tf.SparseTensor(indices=indices,
+                               values=tf.gather_nd(tf.cast(labels,tf.int32), indices) - 1,  # for zero-based index
+                               dense_shape=tf.cast(tf.shape(labels), tf.int64))
+        return sparse_label, x, seq_len

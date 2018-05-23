@@ -130,7 +130,6 @@ def process_libri(csv_file, category):
             # save mfcc
             np.save(target_filename, mfcc, allow_pickle=False)
 
-
 #
 # process TEDLIUM corpus
 #
