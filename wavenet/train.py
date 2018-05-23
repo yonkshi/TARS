@@ -32,7 +32,7 @@ seq_length = tf.reshape(seq_length_col, [-1])
 
 wavenet_weights = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='wavenet')
 
-#loss = tf.nn.ctc_loss(y_batch, wavenet_out, seq_length)
+loss = tf.nn.ctc_loss(y_batch, wavenet_out, seq_length)
 
 
 #
@@ -46,9 +46,9 @@ with tf.Session() as sess:
 
     for i in range(10):
         seqlenlenelne = sess.run(seq_length)
-        wavenet_out, y_out, x_out = sess.run([ wavenet_out, y_batch, x_batch])
+        wavenet_out, y_out, x_out = sess.run([ wavenet_out, y_batch.dense_shape, x_batch])
 
-        #loss = sess.run(loss)
+        loss = sess.run(loss)
         print('yo')
 
 

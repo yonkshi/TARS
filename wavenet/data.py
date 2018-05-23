@@ -132,7 +132,7 @@ class SpeechCorpus(object):
         dataset = dataset.map(lambda label, x, seq: (tf.one_hot(label, voca_size), x, seq))
         dataset = dataset.prefetch(256)
         dataset = dataset.padded_batch(batch_size, padded_shapes=([None, conf.ALPHA_SIZE],[None, conf.FEATURE_DIM],1))
-        #dataset = dataset.map(self.to_sparse_representation)
+        dataset = dataset.map(self.to_sparse_representation)
 
         self.dataset = dataset
         self.iterator = dataset.make_initializable_iterator()
@@ -147,9 +147,9 @@ class SpeechCorpus(object):
         # calc total batch count
         #self.num_batch = len(label) // batch_size
     def to_sparse_representation(self, labels, x, seq_len):
-        num_val = tf.count_nonzero(labels) # number of ones in tensor
-        values = tf.ones(num_val)
 
+        labels = tf.transpose(labels, [2,0,1]) # Alpha size x batch_size x num chars, for ctc_loss
+        x = tf.transpose(x, [1, 0, 2]) # for ctc_loss
         indices = tf.where(tf.not_equal(labels, 0))
         sparse_label = tf.SparseTensor(indices=indices,
                                values=tf.gather_nd(tf.cast(labels,tf.int32), indices) - 1,  # for zero-based index
