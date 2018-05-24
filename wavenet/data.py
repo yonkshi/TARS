@@ -1,12 +1,9 @@
-
 import tensorflow as tf
 import numpy as np
 import csv
 import string
 import wavenet.conf as conf
 
-
-__author__ = 'namju.kim@kakaobrain.com'
 
 
 # default data path
@@ -17,9 +14,9 @@ _data_path = 'asset/data/'
 #
 
 # index to byte mapping
-index2byte = ['<EMP>', ' ', 'a', 'b', 'c', 'd', 'e', 'f', 'g',
+index2byte = [' ', 'a', 'b', 'c', 'd', 'e', 'f', 'g',
               'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q',
-              'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
+              'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '<EMP>']
 
 # byte to index mapping
 byte2index = {}
@@ -28,7 +25,6 @@ for i, ch in enumerate(index2byte):
 
 # vocabulary size
 voca_size = len(index2byte)
-
 
 # convert sentence to index list
 def str2index(str_):
@@ -48,7 +44,6 @@ def str2index(str_):
             pass
     return res
 
-
 # convert index list to string
 def index2str(index_list):
     # transform label index to character
@@ -60,12 +55,10 @@ def index2str(index_list):
             break
     return str_
 
-
 # print list of index list
 def print_index(indices):
     for index_list in indices:
         print(index2str(index_list))
-
 
 # real-time wave to mfcc conversion function
 
@@ -107,9 +100,7 @@ def _augment_speech(mfcc):
 
 # Speech Corpus
 class SpeechCorpus(object):
-
     def __init__(self, batch_size=16, set_name='train'):
-
         # load meta file
         label, mfcc_file = [], []
         with open(_data_path + 'preprocess/meta/%s.csv' % set_name) as csv_file:
@@ -129,27 +120,18 @@ class SpeechCorpus(object):
         dataset = datasource.shuffle(buffer_size=1024)
         dataset = dataset.map(lambda x, y: tf.py_func(func=_load_mfcc, inp=[x, y], Tout=[tf.int32, tf.float32, tf.int32]),
                               num_parallel_calls=64)
-        dataset = dataset.map(lambda label, x, seq: (tf.one_hot(label, voca_size), x, seq))
         dataset = dataset.prefetch(256)
-        dataset = dataset.padded_batch(batch_size, padded_shapes=([None, conf.ALPHA_SIZE],[None, conf.FEATURE_DIM],1))
+        dataset = dataset.padded_batch(batch_size, padded_shapes=([None],[None, conf.FEATURE_DIM],1))
         dataset = dataset.map(self.to_sparse_representation)
 
         self.dataset = dataset
         self.iterator = dataset.make_initializable_iterator()
         self.next_batch = self.iterator.get_next()
 
-        # create batch queue with dynamic pad
-
-        # split data
-        # self.label, self.mfcc = 1, 2
-        # # batch * time * dim
-        # self.mfcc = self.mfcc.sg_transpose(perm=[0, 2, 1])
-        # calc total batch count
-        #self.num_batch = len(label) // batch_size
     def to_sparse_representation(self, labels, x, seq_len):
 
-        labels = tf.transpose(labels, [2,0,1]) # Alpha size x batch_size x num chars, for ctc_loss
-        x = tf.transpose(x, [1, 0, 2]) # for ctc_loss
+        #labels = tf.transpose(labels, [2,0,1]) # Alpha size x batch_size x num chars, for ctc_loss
+        #x = tf.transpose(x, [1, 0, 2]) # for ctc_loss
         indices = tf.where(tf.not_equal(labels, 0))
         sparse_label = tf.SparseTensor(indices=indices,
                                values=tf.gather_nd(tf.cast(labels,tf.int32), indices) - 1,  # for zero-based index
