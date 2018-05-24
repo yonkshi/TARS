@@ -30,7 +30,7 @@ def main():
 
     summary_op = tf.summary.merge([accuracy_summary_op, loss_summary_op])
     run_name = datetime.datetime.now().strftime("May_%d_%I_%M%p")
-    writer = tf.summary.FileWriter('./logs/%s' % run_name)
+    writer = tf.summary.FileWriter('./tb_logs/%s' % run_name)
     saver = tf.train.Saver()
     with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
         sess.run(tf.global_variables_initializer())

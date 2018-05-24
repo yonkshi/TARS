@@ -1,8 +1,11 @@
 # Manually added
 data/*
 asset/
+assets/
 output/*
 logs/
+tb_logs
+
 
 
 # Byte-compiled / optimized / DLL files
