@@ -3,6 +3,7 @@ import csv
 import numpy as np
 import tensorflow as tf
 import conf
+
 class DataLoader(object):
     def __init__(self, batch_size=16, set_name='train'):
         # load meta file
