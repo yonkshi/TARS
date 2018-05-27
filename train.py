@@ -62,7 +62,7 @@ def grad_tower(opt, labels, x, seq_length):
     with tf.device('/gpu:0'):
         wavenet_out, wavenet_no_softmax = build_wavenet(x, voca_size=conf.ALPHA_SIZE)
         loss = tf.nn.ctc_loss(labels, wavenet_no_softmax, seq_length,
-                              time_major=False, # batch x time x alpha_dim
+                              time_major=False, # batch x time x alpha_dimgt
                               ctc_merge_repeated=False, # So we don't have to manually add <emp> at each repeating char
                               ignore_longer_outputs_than_inputs=True) # predicted = batch x time x feat_dim
         loss = tf.reduce_mean(loss)

@@ -85,7 +85,7 @@ def build_wavenet(x, voca_size):
         out = keras.layers.Conv1D(voca_size,
                                       kernel_size = 1,
                                       name = 'output_layer',
-                                      activation='softmax'
+                                      #activation='softmax'
                                       )(out_0)
         softmax_out = tf.nn.softmax(out)
 
