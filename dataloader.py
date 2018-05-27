@@ -56,7 +56,7 @@ class DataLoader(object):
                               num_parallel_calls=64)
         dataset = dataset.repeat()
         dataset = dataset.shuffle(1000)
-        dataset = dataset.padded_batch(batch_size, padded_shapes=([None],[], [None, conf.FEATURE_DIM],1))
+        dataset = dataset.padded_batch(batch_size, padded_shapes=([None],[], [None, conf.FEATURE_DIM],1), padding_values=(27, '', 0.0, 0))
         dataset = dataset.map(self.to_sparse_representation)
 
         self.dataset = dataset
@@ -93,6 +93,6 @@ class DataLoader(object):
     def to_sparse_representation(self, labels, label_text, x, seq_len):
         indices = tf.where(tf.not_equal(labels, 0))
         sparse_label = tf.SparseTensor(indices=indices,
-                               values=tf.gather_nd(tf.cast(labels,tf.int32), indices) - 1,  # for zero-based index
+                               values=tf.gather_nd(tf.cast(labels,tf.int32), indices),  # for zero-based index
                                dense_shape=tf.cast(tf.shape(labels), tf.int64))
         return sparse_label,label_text, x, seq_len

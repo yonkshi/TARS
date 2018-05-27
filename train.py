@@ -15,6 +15,7 @@ def main():
 
     data = DataLoader(batch_size=conf.BATCH_SIZE)
     labels, label_text, x, seq_length_col = data.training_set()
+
     seq_length = tf.reshape(seq_length_col, [-1]) # 1-D vector
 
     opt = tf.train.AdamOptimizer(learning_rate=learning_rate) # Try different gradient
@@ -32,6 +33,10 @@ def main():
     run_name = datetime.datetime.now().strftime("May_%d_%I_%M%p")
     writer = tf.summary.FileWriter('./tb_logs/%s' % run_name)
     saver = tf.train.Saver()
+
+    # DEBUGING STUFF
+    dense = tf.sparse_tensor_to_dense(labels)
+
     with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
         sess.run(tf.global_variables_initializer())
         sess.run(data.iterator.initializer)
@@ -39,6 +44,7 @@ def main():
         for step in range(update_steps):
 
             if step % 10 == 0:
+                # a,b,c,d, = sess.run([dense, label_text, x, seq_length_col]) debugging pipeline output
                 _, loss_out, accuracy_out,summary = sess.run([opt_op, loss, accuracy_op, summary_op])
                 print('step',step,'loss', np.mean(loss_out))
                 print('step', step, 'accuracy', accuracy_out)
