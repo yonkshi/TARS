@@ -55,7 +55,8 @@ def grad_tower(opt, labels, x, seq_length):
     # Build model
     with tf.device('/gpu:0'):
         wavenet_out, wavenet_no_softmax = build_wavenet(x, voca_size=conf.ALPHA_SIZE)
-        loss = tf.nn.ctc_loss(labels, wavenet_no_softmax, seq_length, time_major=False) # predicted = batch x time x feat_dim
+        loss = tf.nn.ctc_loss(labels, wavenet_no_softmax, seq_length, time_major=False, ctc_merge_repeated=False) # predicted = batch x time x feat_dim
+        loss = tf.reduce_mean(loss)
         wavenet_weights = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='wavenet')
         grads_vars = opt.compute_gradients(loss, wavenet_weights)
 

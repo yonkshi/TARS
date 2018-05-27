@@ -1,8 +1,37 @@
 import csv
+import string
 
 import numpy as np
 import tensorflow as tf
 import conf
+# convert index list to string
+def index2str(index_list):
+    # transform label index to character
+    str_ = ''
+    for ch in index_list:
+        if ch > 0:
+            str_ += conf.ALPHABETS[ch]
+        elif ch == 0:  # <EOS>
+            break
+    return str_
+
+# convert sentence to index list
+def str2index(str_):
+
+    # clean white space
+    str_ = ' '.join(str_.split())
+    # remove punctuation and make lower case
+    translator = str.maketrans('', '', string.punctuation)
+    str_ = str_.translate(translator).lower()
+
+    res = []
+    for ch in str_:
+        try:
+            res.append(conf.ALPHABETS_DICT[ch])
+        except KeyError:
+            # drop OOV
+            pass
+    return res
 
 class DataLoader(object):
     def __init__(self, batch_size=16, set_name='train'):
