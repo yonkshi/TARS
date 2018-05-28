@@ -48,7 +48,7 @@ def main():
                 #a,b,c,d, = sess.run([labels]) debugging pipeline output
                 _, loss_out, accuracy_out,summary, _x_out_, _wavenet_out_, _label_text_, _densified_label_, _seq_len, _x_file_name, _predicted_out = sess.run([opt_op, loss, accuracy_op, summary_op, x, wavenet_out, label_text, densified_label, seq_length, x_file_name, dense_predicted])
                 print('step',step,'loss', np.mean(loss_out))
-                if np.mean(loss_out) < 1:
+                #if np.mean(loss_out) < 1:
                     #print(x)
                     #print(loss_out)
                     #idx = _label_text_[0]
