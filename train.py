@@ -78,6 +78,12 @@ def grad_tower(opt, labels, x, seq_length):
     # Build model
     with tf.device('/gpu:0'):
         wavenet_out, wavenet_no_softmax = build_wavenet(x, voca_size=conf.ALPHA_SIZE)
+        loss  = tf.keras.backend.ctc_batch_cost(
+                    y_true,
+                    y_pred,
+                    input_length,
+                    label_length
+        )
         loss = tf.nn.ctc_loss(labels, wavenet_no_softmax, seq_length,
                               time_major=False, # batch x time x alpha_dimgt
                               ctc_merge_repeated=False, # So we don't have to manually add <emp> at each repeating char

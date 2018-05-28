@@ -1,5 +1,5 @@
 PREPROCESSED_DATA = 'asset/data/'
-BATCH_SIZE = 16
+BATCH_SIZE = 300
 FEATURE_DIM = 20 # Features in MFCC
 MAX_FRAMES = 1000 # TODO I just made this number up
 
