@@ -49,32 +49,34 @@ def main():
                 _, loss_out, accuracy_out,summary, _x_out_, _wavenet_out_, _label_text_, _densified_label_, _seq_len, _x_file_name, _predicted_out = sess.run([opt_op, loss, accuracy_op, summary_op, x, wavenet_out, label_text, densified_label, seq_length, x_file_name, dense_predicted])
                 print('step', step, 'loss', np.mean(loss_out))
                 writer.add_summary(summary, step)
-
+                print('labels   :', label)
+                print('predicted:', predicted)
                 for i in range(conf.BATCH_SIZE):
-                    print('>>>>>>>')
-
-                    print('loss', loss_out[i])
-
-                    __x_out = _x_out_[i]
-                    __wavenet_out = _wavenet_out_[i]
-                    __label_text_ = _label_text_[i]
-                    __densified_label_ = _densified_label_[i]
-                    __seq_len = _seq_len[i]
-                    __predicted_out = _predicted_out[i]
-
-                    filename = _x_file_name[i].decode('utf-8')
-                    label_idx = np.fromstring(_label_text_[i], np.int64)
-                    label = index2str(label_idx)
-                    predicted = index2str(_predicted_out[i])
-
-                    print('labels   :',label)
-                    # print('label length', len(label))
-                    print('predicted:',predicted)
-                    # print('filename:', filename)
-                    #
-                    # print('sequence_len:', _seq_len[i])
-                    # print('_wavenet_out_: ', _wavenet_out_[i])
                     if loss_out[i] == 0.0:
+                        print('>>>>>>>')
+
+                        print('loss', loss_out[i])
+
+                        __x_out = _x_out_[i]
+                        __wavenet_out = _wavenet_out_[i]
+                        __label_text_ = _label_text_[i]
+                        __densified_label_ = _densified_label_[i]
+                        __seq_len = _seq_len[i]
+                        __predicted_out = _predicted_out[i]
+
+                        filename = _x_file_name[i].decode('utf-8')
+                        label_idx = np.fromstring(_label_text_[i], np.int64)
+                        label = index2str(label_idx)
+                        predicted = index2str(_predicted_out[i])
+
+
+                        print('label length', len(label))
+
+                        print('filename:', filename)
+
+                        print('sequence_len:', _seq_len[i])
+                        print('_wavenet_out_: ', _wavenet_out_[i])
+
                         print('hohoho')
                 print('>>>>>\n\n\n\n')
 
