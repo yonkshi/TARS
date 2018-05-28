@@ -42,7 +42,9 @@ class DataLoader(object):
         label, mfcc_files, mfcc_seq_len, mfccs, = [], [], [], []
         with open(conf.PREPROCESSED_DATA + 'preprocess/meta/%s.csv' % set_name) as csv_file:
             reader = csv.reader(csv_file, delimiter=',')
-            for row in reader:
+            for i, row in enumerate(reader):
+                if i >= conf.BATCH_SIZE:
+                    break
                 # mfcc file
                 mfcc_filename = conf.PREPROCESSED_DATA + 'preprocess/mfcc/' + row[0] + '.npy'
                 mfcc = np.load(mfcc_filename, allow_pickle=False).T
@@ -51,6 +53,7 @@ class DataLoader(object):
                 mfcc_files.append(mfcc_filename)
                 # label info ( convert to string object for variable-length support )
                 label.append(np.asarray(row[1:], dtype=np.int).tostring())
+
 
 
 
@@ -72,11 +75,11 @@ class DataLoader(object):
         datasource_labels = tf.data.Dataset.from_tensor_slices(label_t)
         datasource_sound_file = tf.data.Dataset.from_tensor_slices(mfcc_files)
         datasource = tf.data.Dataset.zip((datasource_labels, datasource_mfcc, datasource_sound_file))
-        dataset = datasource.shuffle(buffer_size=1024)
-        dataset = dataset.map(lambda x, y, z: tf.py_func(func=self._load_mfcc, inp=[x, y, z], Tout=[tf.int32, tf.string, tf.float32, tf.int32, tf.string]),
+        #dataset = datasource.shuffle(buffer_size=1024)
+        dataset = datasource.map(lambda x, y, z: tf.py_func(func=self._load_mfcc, inp=[x, y, z], Tout=[tf.int32, tf.string, tf.float32, tf.int32, tf.string]),
                               num_parallel_calls=64)
         dataset = dataset.repeat()
-        dataset = dataset.shuffle(1000)
+        #dataset = dataset.shuffle(1000)
         dataset = dataset.padded_batch(batch_size,
                                        padded_shapes=([None],[], [None, conf.FEATURE_DIM],1, []),
                                        padding_values=(27, '', 0.0, 0, '')) # 27 is <EMP> Hard coded

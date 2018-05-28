@@ -53,15 +53,16 @@ def main():
                     #print(loss_out)
                     #idx = _label_text_[0]
 
-                    filename = _x_file_name[0].decode('utf-8')
-                    label_idx = np.fromstring(_label_text_[0], np.int64)
-                    label = index2str(label_idx)
-                    predicted = index2str(_predicted_out[0])
+                filename = _x_file_name[0].decode('utf-8')
+                label_idx = np.fromstring(_label_text_[0], np.int64)
+                label = index2str(label_idx)
+                predicted = index2str(_predicted_out[0])
 
-                    print(label)
-                    print(predicted)
+                print('labels   :',label)
+                print('predicted:',predicted)
+                print('filename:', filename)
 
-                    #print(_wavenet_out_)
+                #print(_wavenet_out_)
 
                 print('step', step, 'accuracy', accuracy_out)
                 writer.add_summary(summary, step)
