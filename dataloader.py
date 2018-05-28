@@ -118,7 +118,7 @@ class DataLoader(object):
         return mfcc
 
     def to_sparse_representation(self, labels, label_text, x, seq_len, mfcc_file_list):
-        indices = tf.where(tf.not_equal(labels, 0))
+        indices = tf.where(tf.not_equal(labels, 27))
         sparse_label = tf.SparseTensor(indices=indices,
                                values=tf.gather_nd(tf.cast(labels,tf.int32), indices),  # for zero-based index
                                dense_shape=tf.cast(tf.shape(labels), tf.int64))
