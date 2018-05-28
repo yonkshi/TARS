@@ -56,7 +56,9 @@ class DataLoader(object):
                               num_parallel_calls=64)
         dataset = dataset.repeat()
         dataset = dataset.shuffle(1000)
-        dataset = dataset.padded_batch(batch_size, padded_shapes=([None],[], [None, conf.FEATURE_DIM],1), padding_values=(27, '', 0.0, 0))
+        dataset = dataset.padded_batch(batch_size,
+                                       padded_shapes=([None],[], [None, conf.FEATURE_DIM],1),
+                                       padding_values=(27, '', 0.0, 0)) # 27 is <EMP> Hard coded
         dataset = dataset.map(self.to_sparse_representation)
 
         self.dataset = dataset

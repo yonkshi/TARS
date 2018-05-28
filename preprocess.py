@@ -108,9 +108,9 @@ def process_libri(csv_file, category):
     # save results
     for i, (wave_file, label) in enumerate(zip(wave_files, labels)):
         fn = wave_file.split('/')[-1]
-        #target_filename = 'asset/data/preprocess/mfcc/' + fn + '.npy'
-        #if os.path.exists( target_filename ):
-        #    continue
+        target_filename = 'asset/data/preprocess/mfcc/' + fn + '.npy'
+        if os.path.exists( target_filename ):
+           continue
         # print info
         print("LibriSpeech corpus preprocessing (%d / %d) - '%s']" % (i, len(wave_files), wave_file))
 
@@ -128,7 +128,7 @@ def process_libri(csv_file, category):
             writer.writerow([fn] + label)
 
             # save mfcc
-            #np.save(target_filename, mfcc, allow_pickle=False)
+            np.save(target_filename, mfcc, allow_pickle=False)
 #
 # process TEDLIUM corpus
 #
