@@ -49,11 +49,14 @@ def main():
                 _, loss_out, accuracy_out,summary, _x_out_, _wavenet_out_, _label_text_, _densified_label_, _seq_len, _x_file_name, _predicted_out = sess.run([opt_op, loss, accuracy_op, summary_op, x, wavenet_out, label_text, densified_label, seq_length, x_file_name, dense_predicted])
                 print('step', step, 'loss', np.mean(loss_out))
                 writer.add_summary(summary, step)
+                label_idx = np.fromstring(_label_text_[0], np.int64)
+                label = index2str(label_idx)
+                predicted = index2str(_predicted_out[0])
                 print('labels   :', label)
                 print('predicted:', predicted)
                 for i in range(conf.BATCH_SIZE):
                     if loss_out[i] == 0.0:
-                        print('>>>>>>>')
+                        print('>>>>>>> zero loss')
 
                         print('loss', loss_out[i])
 
@@ -69,6 +72,8 @@ def main():
                         label = index2str(label_idx)
                         predicted = index2str(_predicted_out[i])
 
+                        print('labels   :', label)
+                        print('predicted:', predicted)
 
                         print('label length', len(label))
 
@@ -77,7 +82,8 @@ def main():
                         print('sequence_len:', _seq_len[i])
                         print('_wavenet_out_: ', _wavenet_out_[i])
 
-                        print('hohoho')
+
+                        print('end <<<<')
                 print('>>>>>\n\n\n\n')
 
             else:
