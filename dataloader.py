@@ -76,14 +76,14 @@ class DataLoader(object):
         datasource_sound_file = tf.data.Dataset.from_tensor_slices(mfcc_files)
         datasource = tf.data.Dataset.zip((datasource_labels, datasource_mfcc, datasource_sound_file))
         #dataset = datasource.shuffle(buffer_size=1024)
-        dataset = datasource.map(lambda x, y, z: tf.py_func(func=self._load_mfcc, inp=[x, y, z], Tout=[tf.int32, tf.string, tf.float32, tf.int32, tf.string]),
+        dataset = datasource.map(lambda x, y, z: tf.py_func(func=self._load_mfcc, inp=[x, y, z], Tout=[tf.int32, tf.string, tf.int32, tf.float32, tf.int32, tf.string]),
                               num_parallel_calls=64)
         dataset = dataset.repeat()
         #dataset = dataset.shuffle(1000)
         dataset = dataset.padded_batch(batch_size,
-                                       padded_shapes=([None],[], [None, conf.FEATURE_DIM],1, []),
-                                       padding_values=(27, '', 0.0, 0, '')) # 27 is <EMP> Hard coded
-        dataset = dataset.map(self.to_sparse_representation)
+                                       padded_shapes=([None],[],1, [None, conf.FEATURE_DIM],1, []),
+                                       padding_values=(27, '', 0, 0.0, 0, '')) # 27 is <EMP> Hard coded
+        #dataset = dataset.map(self.to_sparse_representation)
 
         self.dataset = dataset
         self.iterator = dataset.make_initializable_iterator()
@@ -102,8 +102,9 @@ class DataLoader(object):
         mfcc = mfcc.astype('float32')
         label_new = np.fromstring(label, np.int)
         label_encoded = label_new.astype('int32')
+        lab_len = np.array(label_encoded.shape).astype('int32')[0]  # int32
 
-        return label_encoded, label, mfcc, [seq_len], mfcc_file  # stupid batch
+        return label_encoded, label,lab_len, mfcc, [seq_len], mfcc_file  # stupid batch
 
     def _augment_speech(self, mfcc):
 
