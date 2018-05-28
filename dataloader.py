@@ -36,21 +36,24 @@ def str2index(str_):
 class DataLoader(object):
     def __init__(self, batch_size=16, set_name='train'):
         # load meta file
-        label, mfcc_file = [], []
+        label, mfcc_files = [], []
         with open(conf.PREPROCESSED_DATA + 'preprocess/meta/%s.csv' % set_name) as csv_file:
             reader = csv.reader(csv_file, delimiter=',')
             for row in reader:
                 # mfcc file
-                mfcc_file.append(conf.PREPROCESSED_DATA + 'preprocess/mfcc/' + row[0] + '.npy')
+                mfcc_filename = conf.PREPROCESSED_DATA + 'preprocess/mfcc/' + row[0] + '.npy'
+                mfcc = np.load(mfcc_filename, allow_pickle=False).T
+                mfcc_files.append(mfcc)
                 # label info ( convert to string object for variable-length support )
                 label.append(np.asarray(row[1:], dtype=np.int).tostring())
 
+        #mfcc_massive = np.hstack(mfcc_files)
         # to constant tensor
         label_t = tf.convert_to_tensor(label)
-        mfcc_file_t = tf.convert_to_tensor(mfcc_file)
+        #mfcc_file_t = tf.convert_to_tensor(mfcc_files)
 
         # New pipeline
-        datasource = tf.data.Dataset.from_tensor_slices((label_t, mfcc_file_t))
+        datasource = tf.data.Dataset.from_tensor_slices((label_t, mfcc_files))
         dataset = datasource.shuffle(buffer_size=1024)
         dataset = dataset.map(lambda x, y: tf.py_func(func=self._load_mfcc, inp=[x, y], Tout=[tf.int32, tf.string, tf.float32, tf.int32]),
                               num_parallel_calls=64)
@@ -74,7 +77,7 @@ class DataLoader(object):
         mfcc_file_str = mfcc_file.decode()
         mfcc = np.load(mfcc_file_str, allow_pickle=False)
         seq_len = np.array(mfcc.shape).astype('int32')[1]  # int32
-        mfcc = self._augment_speech(mfcc).T
+        #mfcc = self._augment_speech(mfcc).T
         mfcc = mfcc.astype('float32')
         label_encoded = label_new.astype('int32')
 
@@ -84,12 +87,12 @@ class DataLoader(object):
 
         r = np.random.randint(-2, 2)
         # shifting mfcc
-        mfcc = np.roll(mfcc, r, axis=0)
+        mfcc = np.roll(mfcc, r, axis=1)
         # zero padding
         if r > 0:
-            mfcc[:r, :] = 0
+            mfcc[:, :r] = 0
         elif r < 0:
-            mfcc[r:, :] = 0
+            mfcc[:, r:] = 0
         return mfcc
 
     def to_sparse_representation(self, labels, label_text, x, seq_len):
