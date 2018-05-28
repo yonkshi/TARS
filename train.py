@@ -11,7 +11,7 @@ import conf as conf
 def main():
     # Hyper params
     update_steps = 100_000
-    learning_rate = 1e-2
+    learning_rate = 1e-3
 
     data = DataLoader(batch_size=conf.BATCH_SIZE)
     labels, label_text, x, seq_length_col, x_file_name = data.training_set()
@@ -84,7 +84,7 @@ def main():
 
 
                         print('end <<<<')
-                print('>>>>>\n\n\n\n')
+                        print('>>>>>\n\n\n\n')
 
             else:
                 _ = sess.run([opt_op])
