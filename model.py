@@ -23,7 +23,7 @@ def build_wavenet(x, voca_size):
                                                 activation='tanh',
                                                 name='dilated_conv_%d_tahn_s%d' % (dilate_rate, block),
                                                 padding='causal')(x)
-                conv_tahn = keras.layers.BatchNormalization()(conv_tahn)
+                #conv_tahn = keras.layers.BatchNormalization()(conv_tahn)
 
                 # gate convolution
                 conv_sigm = keras.layers.Conv1D(num_filters,
@@ -32,7 +32,7 @@ def build_wavenet(x, voca_size):
                                                 activation='sigmoid',
                                                 name='dilated_conv_%d_sigm_s%d' % (dilate_rate, block),
                                                 padding='causal')(x)
-                conv_sigm = keras.layers.BatchNormalization()(conv_sigm)
+                #conv_sigm = keras.layers.BatchNormalization()(conv_sigm)
 
                 # output by gate multiplying
 
@@ -44,7 +44,7 @@ def build_wavenet(x, voca_size):
                 res_x = keras.layers.Conv1D(num_filters,
                                        kernel_size=1,
                                        )(gated_x)
-                res_x = keras.layers.BatchNormalization()(res_x)
+                #res_x = keras.layers.BatchNormalization()(res_x)
 
                 skipped = keras.layers.Conv1D(num_filters,
                                        kernel_size=1,
@@ -56,13 +56,13 @@ def build_wavenet(x, voca_size):
                 return res_x_added, res_x
 
         # expand dimension
-        x = keras.layers.BatchNormalization()(x)
+        #x = keras.layers.BatchNormalization()(x)
         input_conv = keras.layers.Conv1D(num_filters,
                                       kernel_size=1,
                                       dilation_rate=1,
                                       name='initial_causal_conv',
                                       padding='causal')(x)
-        input_conv = keras.layers.BatchNormalization()(input_conv)
+        #input_conv = keras.layers.BatchNormalization()(input_conv)
 
         # dilated conv block loop
         skipped_conc = [] # skip connections
@@ -85,7 +85,7 @@ def build_wavenet(x, voca_size):
                                       name = 'before_relu',
                                       activation='relu'
                                       )(res_out)
-        out_0 = keras.layers.BatchNormalization()(out_0)
+        #out_0 = keras.layers.BatchNormalization()(out_0)
 
         out = keras.layers.Conv1D(voca_size,
                                       kernel_size = 1,
