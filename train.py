@@ -11,7 +11,7 @@ import conf as conf
 def main():
     # Hyper params
     update_steps = 100_000
-    learning_rate = 1e-5
+    learning_rate = 1e-4
 
     data = DataLoader(batch_size=conf.BATCH_SIZE)
     labels, label_text, x, seq_length_col = data.training_set()
