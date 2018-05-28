@@ -11,7 +11,7 @@ import conf as conf
 def main():
     # Hyper params
     update_steps = 100_000
-    learning_rate = 1e-4
+    learning_rate = 1e-2
 
     data = DataLoader(batch_size=conf.BATCH_SIZE)
     labels, label_text, x, seq_length_col, x_file_name = data.training_set()
@@ -86,13 +86,13 @@ def grad_tower(opt, labels, x, seq_length):
         wavenet_weights = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='wavenet')
         grads_vars = opt.compute_gradients(loss_mean, wavenet_weights)
 
-        return grads_vars, loss, wavenet_out
+        return grads_vars, loss, wavenet_no_softmax
 
 
 def calc_accuracy(labels, wavenet_out, seq_len ):
 
     wavenet_timemajor = tf.transpose(wavenet_out,[1,0,2]) # Time major for ctc
-    predicted_out, _ = tf.nn.ctc_beam_search_decoder(wavenet_timemajor, seq_len, merge_repeated=False)
+    predicted_out, _ = tf.nn.ctc_beam_search_decoder(wavenet_timemajor, seq_len, merge_repeated=False) # ,
     # to dense tensor
     p = tf.sparse_to_dense(predicted_out[0].indices, predicted_out[0].dense_shape, predicted_out[0].values)
     y = tf.sparse_to_dense(labels.indices, labels.dense_shape, labels.values)

@@ -11,10 +11,10 @@ def index2str(index_list):
     # transform label index to character
     str_ = ''
     for ch in index_list:
-        if ch < 27:
+        if ch <= 77:
             str_ += conf.ALPHABETS[ch]
-        else:  # <EOS>
-            break
+        # else:  # <EOS>
+        #     break
     return str_
 
 # convert sentence to index list
@@ -43,8 +43,8 @@ class DataLoader(object):
         with open(conf.PREPROCESSED_DATA + 'preprocess/meta/%s.csv' % set_name) as csv_file:
             reader = csv.reader(csv_file, delimiter=',')
             for i, row in enumerate(reader):
-                if i >= conf.BATCH_SIZE:
-                    break
+                # if i >= conf.BATCH_SIZE:
+                #     break
                 # mfcc file
                 mfcc_filename = conf.PREPROCESSED_DATA + 'preprocess/mfcc/' + row[0] + '.npy'
                 mfcc = np.load(mfcc_filename, allow_pickle=False).T
