@@ -60,15 +60,15 @@ class DataLoader(object):
 
 
         # Zero mean and unit variance
-        mfcc_massive = np.vstack(mfccs)
-        sc = StandardScaler()
-        mfcc_massive_normalized = sc.fit_transform(mfcc_massive)
-        mfccs = np.split(mfcc_massive_normalized, mfcc_seq_len)
+        # mfcc_massive = np.vstack(mfccs)
+        # sc = StandardScaler()
+        # mfcc_massive_normalized = sc.fit_transform(mfcc_massive)
+        # mfccs = np.split(mfcc_massive_normalized, mfcc_seq_len)
 
         # to constant tensor
         label_t = tf.convert_to_tensor(label)
         def gen():
-            for mfcc in mfccs:
+            for i, mfcc in enumerate(mfccs):
                 yield mfcc
         # New pipeline
         datasource_mfcc = tf.data.Dataset.from_generator(gen, output_types=tf.float32, output_shapes=[None, 20])
@@ -79,7 +79,7 @@ class DataLoader(object):
         dataset = datasource.map(lambda x, y, z: tf.py_func(func=self._load_mfcc, inp=[x, y, z], Tout=[tf.int32, tf.string, tf.float32, tf.int32, tf.string]),
                               num_parallel_calls=64)
         dataset = dataset.repeat()
-        #dataset = dataset.shuffle(1000)
+        dataset = dataset.shuffle(1000)
         dataset = dataset.padded_batch(batch_size,
                                        padded_shapes=([None],[], [None, conf.FEATURE_DIM],1, []),
                                        padding_values=(27, '', 0.0, 0, '')) # 27 is <EMP> Hard coded
@@ -95,6 +95,10 @@ class DataLoader(object):
     def _load_mfcc(self,label, mfcc, mfcc_file):
         # decode string to integer
 
+        # Debug stuff
+        #mfcc_file2 = mfcc_file.decode('utf-8')
+        #label_idx = np.fromstring(label, np.int32)
+        #label = index2str(label_idx)
         #mfcc_file_str = mfcc_file.decode()
         #mfcc = mfcc_file #np.load(mfcc_file_str, allow_pickle=False)
         seq_len = np.array(mfcc.shape).astype('int32')[0]  # int32
