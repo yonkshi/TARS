@@ -45,7 +45,7 @@ def main():
 
             if step % 10 == 0:
                 # a,b,c,d, = sess.run([dense, label_text, x, seq_length_col]) debugging pipeline output
-                _, loss_out, accuracy_out,summary = sess.run([opt_op, loss, accuracy_op, summary_op])
+                _, loss_out, accuracy_out,summary, x_out_ = sess.run([opt_op, loss, accuracy_op, summary_op, x])
                 print('step',step,'loss', np.mean(loss_out))
                 print('step', step, 'accuracy', accuracy_out)
                 writer.add_summary(summary, step)
