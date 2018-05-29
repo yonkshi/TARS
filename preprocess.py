@@ -6,62 +6,69 @@ import librosa
 import soundfile
 import dataloader as data
 import os
+import os.path
 import subprocess
 
-__author__ = 'namju.kim@kakaobrain.com'
+__author__ = 'namju.kim@kakaobrain.com & DT2119 project group 11'
 
 
 # data path
 _data_path = "data/real/"
 
 
+# Preprocess VCTK corpus (both synthetic and standard) -- new version
 #
-# process VCTK corpus
+# Walk through the hierarchy of audio files (in audio_directory) and
+# compute the associated MFCC.
+# Then save these MFCC in a similar hierarchy in target_directory.
 #
+# At the same time, open the transcription associated to each audio file walking
+# through (transcription_directory) and
+# write the corresponding labels in the output comma-separated CSV file.
+# The first column in the CSV file is the basename and the next columns are the
+# labels (in number format from dataloader.str2index).
+def process_vctk(csv_filename, audio_directory, transcription_directory,
+                 target_directory):
+    csv_file = open(csv_filename, mode='w')
+    csv_writer = csv.writer(csv_file, delimiter=',')
 
-def process_vctk(csv_file):
+    speakers = os.listdir(audio_directory)
+    speakers.sort()
+    for speaker in speakers:
+        print('Processing ' + speaker)
 
-    # create csv writer
-    writer = csv.writer(csv_file, delimiter=',')
+        if not os.path.exists(transcription_directory + '/' + speaker):
+            raise RuntimeError
 
-    # read label-info
-    df = pd.read_table(_data_path + 'VCTK-Corpus/speaker-info.txt', usecols=['ID'],
-                       index_col=False, delim_whitespace=True)
+        os.mkdir(target_directory + '/' + speaker)
 
-    # read file IDs
-    file_ids = []
-    for d in [_data_path + 'VCTK-Corpus/txt/p%d/' % uid for uid in df.ID.values]:
-        file_ids.extend([f[-12:-4] for f in sorted(glob.glob(d + '*.txt'))])
+        audio_files = os.listdir(audio_directory + '/' + speaker)
+        audio_files.sort()
+        for audio_file in audio_files:
+            print('\t' + audio_file)
 
-    for i, f in enumerate(file_ids):
+            transcript_filepath = (transcription_directory + '/' + speaker + '/'
+                                   + os.path.splitext(audio_file)[0] + '.txt')
+            if not os.path.exists(transcript_filepath):
+                raise RuntimeError
 
-        # wave file name
-        wave_file = _data_path + 'VCTK-Corpus/wav48/%s/' % f[:4] + f + '.wav'
-        fn = wave_file.split('/')[-1]
-        target_filename = 'asset/data/preprocess/mfcc/' + fn + '.npy'
-        if os.path.exists( target_filename ):
-            continue
-        # print info
-        print("VCTK corpus preprocessing (%d / %d) - '%s']" % (i, len(file_ids), wave_file))
+            audio_filepath = audio_directory + '/' + speaker + '/' + audio_file
+            audio, _ = librosa.load(audio_filepath, sr=16000)
+            mfcc = librosa.feature.mfcc(audio, sr=16000)
+            target_filepath = (target_directory + '/' + speaker + '/' +
+                               os.path.splitext(audio_file)[0] + '_mfcc.npy')
+            np.save(target_filepath, mfcc)
 
-        # load wave file
-        wave, sr = librosa.load(wave_file, mono=True, sr=None)
+            transcript_file = open(transcript_filepath)
+            labels = data.str2index(transcript_file.read())
+            transcript_file.close()
 
-        # re-sample ( 48K -> 16K )
-        wave = wave[::3]
+            if not len(labels) <= mfcc.shape[1]:
+                raise ValueError('Transcript longer than MFCC sequence in '
+                                 + transcript_filepath)
+            csv_writer.writerow([audio_file] + labels)
 
-        # get mfcc feature
-        mfcc = librosa.feature.mfcc(wave, sr=16000)
-
-        # get label index
-        label = data.str2index(open(_data_path + 'VCTK-Corpus/txt/%s/' % f[:4] + f + '.txt').read())
-
-        # save result ( exclude small mfcc data to prevent ctc loss )
-        if len(label) < mfcc.shape[1]:
-            # save meta info
-            writer.writerow([fn] + label)
-            # save mfcc
-            np.save(target_filename, mfcc, allow_pickle=False)
+    csv_file.close()
 
 
 #
