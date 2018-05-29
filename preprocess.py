@@ -10,6 +10,7 @@ import multiprocessing.pool
 import os
 import os.path
 import subprocess
+import sklearn.preprocessing
 
 __author__ = 'namju.kim@kakaobrain.com & DT2119 project group 11'
 
@@ -88,6 +89,36 @@ def process_vctk(csv_filename, audio_directory, transcription_directory,
             csv_writer.writerow(sample_csv_elements)
     csv_file.close()
 
+
+def normalize_vctk(source_directory, target_directory):
+    if not os.path.exists(source_directory):
+        raise RuntimeError
+    if not os.path.exists(target_directory):
+        raise RuntimeError
+
+    scaler = sklearn.preprocessing.StandardScaler()
+
+    speakers = os.listdir(source_directory)
+    speakers.sort()
+    for speaker in speakers:
+        mfcc_files = os.listdir(source_directory + '/' + speaker)
+        mfcc_files.sort()
+        for mfcc_file in mfcc_files:
+            mfcc_filepath = source_directory + '/' + speaker + '/' + mfcc_file
+            mfcc = np.load(mfcc_filepath)
+            scaler.partial_fit(mfcc.T)
+
+    for speaker in speakers:
+        os.mkdir(target_directory + '/' + speaker)
+        mfcc_files = os.listdir(source_directory + '/' + speaker)
+        mfcc_files.sort()
+        for mfcc_file in mfcc_files:
+            mfcc_filepath = source_directory + '/' + speaker + '/' + mfcc_file
+            mfcc = np.load(mfcc_filepath).T
+            mfcc = scaler.transform(mfcc)
+            np.save(target_directory + '/' + speaker + '/' + mfcc_file, mfcc.T)
+
+    print(scaler.get_params())
 
 #
 # process LibriSpeech corpus
