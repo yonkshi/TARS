@@ -3,8 +3,10 @@ import pandas as pd
 import glob
 import csv
 import librosa
+import functools
 import soundfile
 import dataloader as data
+import multiprocessing.pool
 import os
 import os.path
 import subprocess
@@ -14,6 +16,45 @@ __author__ = 'namju.kim@kakaobrain.com & DT2119 project group 11'
 
 # data path
 _data_path = "data/real/"
+
+
+def process_speaker_folder(speaker, audio_directory, transcription_directory,
+                           target_directory):
+    csv_elements = []
+
+    print('Processing ' + speaker)
+
+    if not os.path.exists(transcription_directory + '/' + speaker):
+        raise RuntimeError
+
+    os.mkdir(target_directory + '/' + speaker)
+
+    audio_files = os.listdir(audio_directory + '/' + speaker)
+    audio_files.sort()
+    for audio_file in audio_files:
+        transcript_filepath = (transcription_directory + '/' + speaker + '/'
+                               + os.path.splitext(audio_file)[0] + '.txt')
+        if not os.path.exists(transcript_filepath):
+            raise RuntimeError
+        transcript_file = open(transcript_filepath)
+        labels = data.str2index(transcript_file.read())
+        csv_elements.append([audio_file] + labels)
+        transcript_file.close()
+
+        target_filepath = (target_directory + '/' + speaker + '/' +
+                           os.path.splitext(audio_file)[0] + '_mfcc.npy')
+        if os.path.exists(target_filepath):
+            continue
+        audio_filepath = audio_directory + '/' + speaker + '/' + audio_file
+        audio, _ = librosa.load(audio_filepath, sr=16000)
+        mfcc = librosa.feature.mfcc(audio, sr=16000)
+        np.save(target_filepath, mfcc)
+
+        if not len(labels) <= mfcc.shape[1]:
+            raise ValueError('Transcript longer than MFCC sequence in '
+                             + transcript_filepath)
+
+    return csv_elements
 
 
 # Preprocess VCTK corpus (both synthetic and standard) -- new version
@@ -29,45 +70,22 @@ _data_path = "data/real/"
 # labels (in number format from dataloader.str2index).
 def process_vctk(csv_filename, audio_directory, transcription_directory,
                  target_directory):
-    csv_file = open(csv_filename, mode='w')
-    csv_writer = csv.writer(csv_file, delimiter=',')
-
     speakers = os.listdir(audio_directory)
     speakers.sort()
-    for speaker in speakers:
-        print('Processing ' + speaker)
+    pool = multiprocessing.pool.Pool()
+    all_csv_elements = pool.map(
+        functools.partial(process_speaker_folder,
+                          audio_directory=audio_directory,
+                          transcription_directory=transcription_directory,
+                          target_directory=target_directory),
+        speakers
+    )
 
-        if not os.path.exists(transcription_directory + '/' + speaker):
-            raise RuntimeError
-
-        os.mkdir(target_directory + '/' + speaker)
-
-        audio_files = os.listdir(audio_directory + '/' + speaker)
-        audio_files.sort()
-        for audio_file in audio_files:
-            print('\t' + audio_file)
-
-            transcript_filepath = (transcription_directory + '/' + speaker + '/'
-                                   + os.path.splitext(audio_file)[0] + '.txt')
-            if not os.path.exists(transcript_filepath):
-                raise RuntimeError
-
-            audio_filepath = audio_directory + '/' + speaker + '/' + audio_file
-            audio, _ = librosa.load(audio_filepath, sr=16000)
-            mfcc = librosa.feature.mfcc(audio, sr=16000)
-            target_filepath = (target_directory + '/' + speaker + '/' +
-                               os.path.splitext(audio_file)[0] + '_mfcc.npy')
-            np.save(target_filepath, mfcc)
-
-            transcript_file = open(transcript_filepath)
-            labels = data.str2index(transcript_file.read())
-            transcript_file.close()
-
-            if not len(labels) <= mfcc.shape[1]:
-                raise ValueError('Transcript longer than MFCC sequence in '
-                                 + transcript_filepath)
-            csv_writer.writerow([audio_file] + labels)
-
+    csv_file = open(csv_filename, mode='w')
+    csv_writer = csv.writer(csv_file, delimiter=',')
+    for speaker_csv_elements in all_csv_elements:
+        for sample_csv_elements in speaker_csv_elements:
+            csv_writer.writerow(sample_csv_elements)
     csv_file.close()
 
 
