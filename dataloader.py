@@ -44,7 +44,7 @@ class DataLoader(object):
             reader = csv.reader(csv_file, delimiter=',')
             for i, row in enumerate(reader):
                 # mfcc file
-                mfcc_filename = conf.PREPROCESSED_DATA + 'preprocess/mfcc/' + row[0] + '.npy'
+                mfcc_filename = conf.PREPROCESSED_DATA + 'preprocess-librispeech/mfcc/' + row[0] + '.npy'
                 mfcc = np.load(mfcc_filename, allow_pickle=False).T
                 mfcc_seq_len.append(mfcc.shape[0]) # sequence length
                 mfccs.append(mfcc)
