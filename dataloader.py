@@ -77,7 +77,7 @@ class DataLoader(object):
         dataset = datasource.map(lambda x, y, z: tf.py_func(func=self._load_mfcc, inp=[x, y, z], Tout=[tf.int32, tf.string, tf.int32, tf.float32, tf.int32, tf.string]),
                               num_parallel_calls=64)
         dataset = dataset.repeat()
-        #dataset = dataset.shuffle(1000)
+        dataset = dataset.shuffle(1000)
         dataset = dataset.padded_batch(batch_size,
                                        padded_shapes=([None],[],1, [None, conf.FEATURE_DIM],1, []),
                                        padding_values=(27, '', 0, 0.0, 0, '')) # 27 is <EMP> Hard coded
