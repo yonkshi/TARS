@@ -1,7 +1,6 @@
 from __future__ import absolute_import, division, print_function
 import datetime
 
-from tensorflow.python import debug as tf_debug
 import numpy as np
 
 from dataloader import DataLoader, index2str
