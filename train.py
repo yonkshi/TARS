@@ -27,11 +27,8 @@ def main():
     print('model built')
     mean_loss = tf.reduce_mean(loss)
     loss_summary_op = tf.summary.scalar('loss', mean_loss, family='loss and accuracy')
-    #accuracy_op, predicted_out = calc_accuracy(labels,wavenet_out, seq_length)
-    accuracy_op = 0
-    accuracy_summary_op = tf.summary.scalar('accuracy', accuracy_op, family='loss and accuracy')
 
-    summary_op = tf.summary.merge([accuracy_summary_op, loss_summary_op])
+    summary_op = tf.summary.merge([loss_summary_op])
     run_name = datetime.datetime.now().strftime("May_%d_%I_%M%p")
     writer = tf.summary.FileWriter('./tb_logs/%s' % run_name)
     saver = tf.train.Saver()
