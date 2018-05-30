@@ -58,10 +58,10 @@ class DataLoader(object):
 
 
         # Zero mean and unit variance
-        mfcc_massive = np.vstack(mfccs)
-        sc = StandardScaler()
-        mfcc_massive_normalized = sc.fit_transform(mfcc_massive)
-        mfccs = np.split(mfcc_massive_normalized, mfcc_seq_len)
+        # mfcc_massive = np.vstack(mfccs)
+        # sc = StandardScaler()
+        # mfcc_massive_normalized = sc.fit_transform(mfcc_massive)
+        # mfccs = np.split(mfcc_massive_normalized, mfcc_seq_len)
 
         # to constant tensor
         label_t = tf.convert_to_tensor(label)
