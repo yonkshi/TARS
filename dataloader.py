@@ -37,10 +37,10 @@ def str2index(str_):
 
 class DataLoader(object):
 
-    def __init__(self, batch_size=16, set_name='train'):
+    def __init__(self, csv_filepath, batch_size=16):
         # load meta file
         label, mfcc_files, mfcc_seq_len, mfccs, = [], [], [], []
-        with open(conf.PREPROCESSED_DATA + 'preprocess/meta/%s.csv' % set_name) as csv_file:
+        with open(csv_filepath) as csv_file:
             reader = csv.reader(csv_file, delimiter=',')
             for i, row in enumerate(reader):
                 if i >= conf.BATCH_SIZE:
