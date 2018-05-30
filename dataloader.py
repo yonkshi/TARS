@@ -43,8 +43,6 @@ class DataLoader(object):
         with open(csv_filepath) as csv_file:
             reader = csv.reader(csv_file, delimiter=',')
             for i, row in enumerate(reader):
-                if i >= conf.BATCH_SIZE:
-                    break
                 # mfcc file
                 mfcc_filename = conf.PREPROCESSED_DATA + 'preprocess/mfcc/' + row[0] + '.npy'
                 mfcc = np.load(mfcc_filename, allow_pickle=False).T

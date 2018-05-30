@@ -11,7 +11,7 @@ def main():
     update_steps = 100000
     learning_rate = 1e-4
     # Data path
-    csv_filepath = 'asset/data/preprocess/train.csv'
+    csv_filepath = 'asset/data/preprocess-librispeech/meta/train.csv'
 
     data = DataLoader(batch_size=conf.BATCH_SIZE, csv_filepath=csv_filepath)
     labels, label_text, lab_len, x, seq_length_col, x_file_name = data.training_set()
