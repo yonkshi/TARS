@@ -102,7 +102,7 @@ class DataLoader(object):
         label_encoded = label_new.astype('int32')
         lab_len = np.array(label_encoded.shape).astype('int32')[0]  # int32
 
-        return label_encoded, label,lab_len, mfcc, [seq_len], mfcc_file  # stupid batch
+        return label_encoded, label,[lab_len], mfcc, [seq_len], mfcc_file  # stupid batch
 
     def _augment_speech(self, mfcc):
 
