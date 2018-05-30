@@ -1,11 +1,10 @@
 from __future__ import absolute_import, division, print_function
+import conf
+from dataloader import DataLoader, index2str
 import datetime
-
+from model import *
 import numpy as np
 
-from dataloader import DataLoader, index2str
-from model import *
-import conf as conf
 
 def main():
     # Hyper params
