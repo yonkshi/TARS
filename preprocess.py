@@ -175,7 +175,18 @@ def process_libri(csv_file, category):
 
 
 def getPhonemeList():
+    phonemeSet = set()
     a = nltk.corpus.cmudict.dict()
+
+    keys = a.keys()
+    for key in keys:
+        for i in range(0,len(a[key])):
+            for j in range(0, len(a[key][i])):
+                phonemeSet.add(a[key][i][j])
+
+    intToPhoneme = dict(enumerate(phonemeSet))
+    phonemeToInt = {v: k for k, v in intToPhoneme.items()}
+    return intToPhoneme,phonemeToInt
 
 # Create directories
 if not os.path.exists('asset/data/preprocess'):
@@ -186,7 +197,7 @@ if not os.path.exists('asset/data/preprocess/mfcc'):
     os.makedirs('asset/data/preprocess/mfcc')
 
 if __name__ == "__main__":
-    l = getPhonemeList()
+    intToPhoneme, phonemeToInt = getPhonemeList()
 
     # Run pre-processing for training
     csv_f = open('asset/data/preprocess/meta/train.csv', 'w')
