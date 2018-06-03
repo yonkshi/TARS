@@ -1,8 +1,7 @@
 import numpy as np
 import pandas as pd
-import glob,csv,librosa,soundfile,os
 import dataloader as data
-import subprocess
+import glob,csv,librosa,soundfile,os,subprocess,nltk
 
 # data path
 _data_path = "data/real/"
@@ -184,6 +183,9 @@ def process_ted(csv_file, category):
             # save mfcc
             np.save(target_filename, mfcc, allow_pickle=False)
 
+def getPhonemeList():
+    a = nltk.corpus.cmudict.dict()
+
 # Create directories
 if not os.path.exists('asset/data/preprocess'):
     os.makedirs('asset/data/preprocess')
@@ -193,6 +195,8 @@ if not os.path.exists('asset/data/preprocess/mfcc'):
     os.makedirs('asset/data/preprocess/mfcc')
 
 if __name__ == "__main__":
+    l = getPhonemeList()
+
     # Run pre-processing for training
     csv_f = open('asset/data/preprocess/meta/train.csv', 'w')
     process_libri(csv_f, 'dev-clean')
