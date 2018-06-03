@@ -9,10 +9,25 @@ num_res_hidden_layers = 3 # Number of res net hidden layers
 feature_size = 13 # Input dimension
 
 def build_wavenet(x, voca_size):
+    '''
+    MAin building block for WaveNet
+    :param x: input tensor
+    :param voca_size: output dimension
+    :return:
+    '''
     with tf.variable_scope('wavenet'):
 
         # residual block
         def res_block_keras(x, kernel_size, layer_depth, block, dim=num_dim):
+            '''
+            Residual block builder, uses a special residual block with gated convolution as specificed in WaveNet paper
+            :param x: input tensor
+            :param kernel_size: kernel size
+            :param layer_depth: Depth in residual block, only used in naming components
+            :param block: Block number in residual blocks, only used in naming components
+            :param dim:
+            :return:
+            '''
             with tf.name_scope(name='res_block_%d_depth_%d' % (block, layer_depth)):
 
                 dilate_rate = (2 ** layer_depth)

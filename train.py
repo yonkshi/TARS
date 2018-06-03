@@ -11,19 +11,27 @@ import conf as conf
 def main():
     # Hyper params
     update_steps = 100_000
-    learning_rate = 1e-4
+    learning_rate = 1e-3
 
+    # Data pipeline initialization
     data = DataLoader(batch_size=conf.BATCH_SIZE)
     labels, label_text, x, seq_length_col, x_file_name = data.training_set()
 
+    # Bug fix because seq_length does not support
     seq_length = tf.reshape(seq_length_col, [-1]) # 1-D vector
 
+    # optimizer
     opt = tf.train.AdamOptimizer(learning_rate=learning_rate) # Try different gradient
 
+    # forward and backpass inside grad_tower, meant for single GPU operation
     grads_vars, loss, wavenet_out = grad_tower(opt, labels, x, seq_length)
 
+    # Apply gradients to models
     opt_op = opt.apply_gradients(grads_vars)
     print('model built')
+
+
+    # Summary related stuff, not essential to op
     mean_loss = tf.reduce_mean(loss)
     loss_summary_op = tf.summary.scalar('loss', mean_loss, family='loss and accuracy')
     accuracy_op, predicted_out = calc_accuracy(labels,wavenet_out, seq_length)
@@ -43,29 +51,51 @@ def main():
         sess.run(data.iterator.initializer)
 
         for step in range(update_steps):
-
+            # compute summary every 10 steps
             if step % 10 == 0:
-                #a,b,c,d, = sess.run([labels]) debugging pipeline output
                 _, loss_out, accuracy_out,summary, _x_out_, _wavenet_out_, _label_text_, _densified_label_, _seq_len, _x_file_name, _predicted_out = sess.run([opt_op, loss, accuracy_op, summary_op, x, wavenet_out, label_text, densified_label, seq_length, x_file_name, dense_predicted])
-                print('step',step,'loss', np.mean(loss_out))
-                #if np.mean(loss_out) < 1:
-                    #print(x)
-                    #print(loss_out)
-                    #idx = _label_text_[0]
+                print('step', step, 'loss', np.mean(loss_out))
+                writer.add_summary(summary, step)
 
-                filename = _x_file_name[0].decode('utf-8')
                 label_idx = np.fromstring(_label_text_[0], np.int64)
                 label = index2str(label_idx)
                 predicted = index2str(_predicted_out[0])
+                print('labels   :', label)
+                print('predicted:', predicted)
 
-                print('labels   :',label)
-                print('predicted:',predicted)
-                print('filename:', filename)
+                # Everything below are used for debugging loss
+                for i in range(conf.BATCH_SIZE):
+                    if loss_out[i] == 0.0:
+                        print('>>>>>>> zero loss')
 
-                #print(_wavenet_out_)
+                        print('loss', loss_out[i])
 
-                print('step', step, 'accuracy', accuracy_out)
-                writer.add_summary(summary, step)
+                        __x_out = _x_out_[i]
+                        __wavenet_out = _wavenet_out_[i]
+                        __label_text_ = _label_text_[i]
+                        __densified_label_ = _densified_label_[i]
+                        __seq_len = _seq_len[i]
+                        __predicted_out = _predicted_out[i]
+
+                        filename = _x_file_name[i].decode('utf-8')
+                        label_idx = np.fromstring(_label_text_[i], np.int64)
+                        label = index2str(label_idx)
+                        predicted = index2str(_predicted_out[i])
+
+                        print('labels   :', label)
+                        print('predicted:', predicted)
+
+                        print('label length', len(label))
+
+                        print('filename:', filename)
+
+                        print('sequence_len:', _seq_len[i])
+                        print('_wavenet_out_: ', _wavenet_out_[i])
+
+
+                        print('end <<<<')
+                        print('>>>>>\n\n\n\n')
+
             else:
                 _ = sess.run([opt_op])
 
@@ -77,27 +107,40 @@ def main():
 def grad_tower(opt, labels, x, seq_length):
     # Build model
     with tf.device('/gpu:0'):
+        # Forward pass
         wavenet_out, wavenet_no_softmax = build_wavenet(x, voca_size=conf.ALPHA_SIZE)
+
+        # Loss function
         loss = tf.nn.ctc_loss(labels, wavenet_no_softmax, seq_length,
                               time_major=False, # batch x time x alpha_dimgt
                               ctc_merge_repeated=False, # So we don't have to manually add <emp> at each repeating char
                               ignore_longer_outputs_than_inputs=True) # predicted = batch x time x feat_dim
+
+        # Mean
         loss_mean = tf.reduce_mean(loss)
+
+        # Get all wavenet parameters
         wavenet_weights = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='wavenet')
+
+        # Backprop
         grads_vars = opt.compute_gradients(loss_mean, wavenet_weights)
 
-        return grads_vars, loss, wavenet_out
+        return grads_vars, loss, wavenet_no_softmax
 
 
 def calc_accuracy(labels, wavenet_out, seq_len ):
-
+    # Used to visualize trainig progress
     wavenet_timemajor = tf.transpose(wavenet_out,[1,0,2]) # Time major for ctc
-    predicted_out, _ = tf.nn.ctc_beam_search_decoder(wavenet_timemajor, seq_len, merge_repeated=False)
+    predicted_out, _ = tf.nn.ctc_beam_search_decoder(wavenet_timemajor, seq_len, merge_repeated=False) # ,
     # to dense tensor
+
+    # CTC Decoder
     p = tf.sparse_to_dense(predicted_out[0].indices, predicted_out[0].dense_shape, predicted_out[0].values)
     y = tf.sparse_to_dense(labels.indices, labels.dense_shape, labels.values)
     p = tf.cast(p, dtype=tf.int32, name='casted_p')
 
+    # Computing character level difference
+    # TODO Use edit distance instead of alignment distance
     y_len = tf.shape(y)[1]
     p_len = tf.shape(p)[1]
     pad_dim = tf.abs(tf.shape(y)[1] - tf.shape(p)[1])

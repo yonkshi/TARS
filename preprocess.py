@@ -1,57 +1,111 @@
 import numpy as np
-import pandas as pd
 import dataloader as data
-import glob,csv,librosa,soundfile,os,subprocess,nltk
+import glob,csv,librosa,functools,soundfile,multiprocessing.pool,os,os.path,sklearn.preprocessing,nltk
 
 # data path
 _data_path = "data/real/"
 
-
 # process VCTK corpus
-def process_vctk(csv_file):
+def process_speaker_folder(speaker, audio_directory, transcription_directory,
+                           target_directory):
+    csv_elements = []
 
-    # create csv writer
-    writer = csv.writer(csv_file, delimiter=',')
+    print('Processing ' + speaker)
 
-    # read label-info
-    df = pd.read_table(_data_path + 'VCTK-Corpus/speaker-info.txt', usecols=['ID'],
-                       index_col=False, delim_whitespace=True)
+    if not os.path.exists(transcription_directory + '/' + speaker):
+        raise RuntimeError
 
-    # read file IDs
-    file_ids = []
-    for d in [_data_path + 'VCTK-Corpus/txt/p%d/' % uid for uid in df.ID.values]:
-        file_ids.extend([f[-12:-4] for f in sorted(glob.glob(d + '*.txt'))])
+    os.mkdir(target_directory + '/' + speaker)
 
-    for i, f in enumerate(file_ids):
+    audio_files = os.listdir(audio_directory + '/' + speaker)
+    audio_files.sort()
+    for audio_file in audio_files:
+        transcript_filepath = (transcription_directory + '/' + speaker + '/'
+                               + os.path.splitext(audio_file)[0] + '.txt')
+        if not os.path.exists(transcript_filepath):
+            raise RuntimeError
+        transcript_file = open(transcript_filepath)
+        labels = data.str2index(transcript_file.read())
+        csv_elements.append([audio_file] + labels)
+        transcript_file.close()
 
-        # wave file name
-        wave_file = _data_path + 'VCTK-Corpus/wav48/%s/' % f[:4] + f + '.wav'
-        fn = wave_file.split('/')[-1]
-        target_filename = 'asset/data/preprocess/mfcc/' + fn + '.npy'
-        if os.path.exists( target_filename ):
+        target_filepath = (target_directory + '/' + speaker + '/' +
+                           os.path.splitext(audio_file)[0] + '_mfcc.npy')
+        if os.path.exists(target_filepath):
             continue
-        # print info
-        print("VCTK corpus preprocessing (%d / %d) - '%s']" % (i, len(file_ids), wave_file))
+        audio_filepath = audio_directory + '/' + speaker + '/' + audio_file
+        audio, _ = librosa.load(audio_filepath, sr=16000)
+        mfcc = librosa.feature.mfcc(audio, sr=16000)
+        np.save(target_filepath, mfcc)
 
-        # load wave file
-        wave, sr = librosa.load(wave_file, mono=True, sr=None)
+        if not len(labels) <= mfcc.shape[1]:
+            raise ValueError('Transcript longer than MFCC sequence in '
+                             + transcript_filepath)
 
-        # re-sample ( 48K -> 16K )
-        wave = wave[::3]
+    return csv_elements
 
-        # get mfcc feature
-        mfcc = librosa.feature.mfcc(wave, sr=16000)
 
-        # get label index
-        label = data.str2index(open(_data_path + 'VCTK-Corpus/txt/%s/' % f[:4] + f + '.txt').read())
+# Preprocess VCTK corpus (both synthetic and standard) -- new version
+#
+# Walk through the hierarchy of audio files (in audio_directory) and
+# compute the associated MFCC.
+# Then save these MFCC in a similar hierarchy in target_directory.
+#
+# At the same time, open the transcription associated to each audio file walking
+# through (transcription_directory) and
+# write the corresponding labels in the output comma-separated CSV file.
+# The first column in the CSV file is the basename and the next columns are the
+# labels (in number format from dataloader.str2index).
+def process_vctk(csv_filename, audio_directory, transcription_directory,
+                 target_directory):
+    speakers = os.listdir(audio_directory)
+    speakers.sort()
+    pool = multiprocessing.pool.Pool()
+    all_csv_elements = pool.map(
+        functools.partial(process_speaker_folder,
+                          audio_directory=audio_directory,
+                          transcription_directory=transcription_directory,
+                          target_directory=target_directory),
+        speakers
+    )
 
-        # save result ( exclude small mfcc data to prevent ctc loss )
-        if len(label) < mfcc.shape[1]:
-            # save meta info
-            writer.writerow([fn] + label)
-            # save mfcc
-            np.save(target_filename, mfcc, allow_pickle=False)
+    csv_file = open(csv_filename, mode='w')
+    csv_writer = csv.writer(csv_file, delimiter=',')
+    for speaker_csv_elements in all_csv_elements:
+        for sample_csv_elements in speaker_csv_elements:
+            csv_writer.writerow(sample_csv_elements)
+    csv_file.close()
 
+
+def normalize_vctk(source_directory, target_directory):
+    if not os.path.exists(source_directory):
+        raise RuntimeError
+    if not os.path.exists(target_directory):
+        raise RuntimeError
+
+    scaler = sklearn.preprocessing.StandardScaler()
+
+    speakers = os.listdir(source_directory)
+    speakers.sort()
+    for speaker in speakers:
+        mfcc_files = os.listdir(source_directory + '/' + speaker)
+        mfcc_files.sort()
+        for mfcc_file in mfcc_files:
+            mfcc_filepath = source_directory + '/' + speaker + '/' + mfcc_file
+            mfcc = np.load(mfcc_filepath)
+            scaler.partial_fit(mfcc.T)
+
+    for speaker in speakers:
+        os.mkdir(target_directory + '/' + speaker)
+        mfcc_files = os.listdir(source_directory + '/' + speaker)
+        mfcc_files.sort()
+        for mfcc_file in mfcc_files:
+            mfcc_filepath = source_directory + '/' + speaker + '/' + mfcc_file
+            mfcc = np.load(mfcc_filepath).T
+            mfcc = scaler.transform(mfcc)
+            np.save(target_directory + '/' + speaker + '/' + mfcc_file, mfcc.T)
+
+    print(scaler.get_params())
 
 
 # process LibriSpeech corpus
@@ -117,71 +171,8 @@ def process_libri(csv_file, category):
             # save mfcc
             #np.save(target_filename, mfcc, allow_pickle=False)
 
-# process TEDLIUM corpus
-def convert_sph( sph, wav ):
-    """Convert an sph file into wav format for further processing"""
-    command = [
-        'sox','-t','sph', sph, '-b','16','-t','wav', wav
-    ]
-    subprocess.check_call( command ) # Did you install sox (apt-get install sox)
 
-def process_ted(csv_file, category):
 
-    parent_path = _data_path + 'TEDLIUM_release2/' + category + '/'
-    labels, wave_files, offsets, durs = [], [], [], []
-
-    # create csv writer
-    writer = csv.writer(csv_file, delimiter=',')
-
-    # read STM file list
-    stm_list = glob.glob(parent_path + 'stm/*')
-    for stm in stm_list:
-        with open(stm, 'rt') as f:
-            records = f.readlines()
-            for record in records:
-                field = record.split()
-
-                # wave file name
-                wave_file = parent_path + 'sph/%s.sph.wav' % field[0]
-                wave_files.append(wave_file)
-
-                # label index
-                labels.append(data.str2index(' '.join(field[6:])))
-
-                # start, end info
-                start, end = float(field[3]), float(field[4])
-                offsets.append(start)
-                durs.append(end - start)
-
-    # save results
-    for i, (wave_file, label, offset, dur) in enumerate(zip(wave_files, labels, offsets, durs)):
-        fn = "%s-%.2f" % (wave_file.split('/')[-1], offset)
-        target_filename = 'asset/data/preprocess/mfcc/' + fn + '.npy'
-        if os.path.exists( target_filename ):
-            continue
-        # print info
-        print("TEDLIUM corpus preprocessing (%d / %d) - '%s-%.2f]" % (i, len(wave_files), wave_file, offset))
-        # load wave file
-        if not os.path.exists( wave_file ):
-            sph_file = wave_file.rsplit('.',1)[0]
-            if os.path.exists( sph_file ):
-                convert_sph( sph_file, wave_file )
-            else:
-                raise RuntimeError("Missing sph file from TedLium corpus at %s"%(sph_file))
-        wave, sr = librosa.load(wave_file, mono=True, sr=None, offset=offset, duration=dur)
-
-        # get mfcc feature
-        mfcc = librosa.feature.mfcc(wave, sr=16000)
-
-        # save result ( exclude small mfcc data to prevent ctc loss )
-        if len(label) < mfcc.shape[1]:
-            # filename
-
-            # save meta info
-            writer.writerow([fn] + label)
-
-            # save mfcc
-            np.save(target_filename, mfcc, allow_pickle=False)
 
 def getPhonemeList():
     a = nltk.corpus.cmudict.dict()
