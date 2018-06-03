@@ -1,5 +1,6 @@
 import numpy as np
 import dataloader as data
+from conf import *
 import glob,csv,librosa,functools,soundfile,multiprocessing.pool,os,os.path,sklearn.preprocessing,nltk,editdistance
 
 # data path
@@ -110,12 +111,17 @@ def normalize_vctk(source_directory, target_directory):
 
 # process LibriSpeech corpus
 def process_libri(csv_file, category):
+    corpus = nltk.corpus.cmudict.dict()
+    #intToPhoneme, phonemeToInt = getPhonemeIntMaps()
 
     parent_path = _data_path + 'LibriSpeech/' + category + '/'
     labels, wave_files = [], []
 
     # create csv writer
     writer = csv.writer(csv_file, delimiter=',')
+
+    skipped = 0
+    total = 0
 
     # read directory list by speaker
     speaker_list = glob.glob(parent_path + '*')
@@ -131,6 +137,8 @@ def process_libri(csv_file, category):
                 with open(txt, 'rt') as f:
                     records = f.readlines()
                     for record in records:
+                        total+=1
+
                         # parsing record
                         field = record.split('-')  # split by '-'
                         speaker = field[0]
@@ -138,15 +146,26 @@ def process_libri(csv_file, category):
                         field = field[2].split()  # split field[2] by ' '
                         utterance = field[0]  # first column is utterance id
 
+                        # label index
+                        lowerCasedInts = [[phonemeToInt[phoneme] if phoneme is not False else False for phoneme in getPhonemes(corpus,x.lower())] for x in field[1:]]
+                        if [False] in lowerCasedInts:#If word did not exist in the cmudict skip to next sentence
+                            skipped += 1
+                            continue
+
+                        label = []
+                        sp = phonemeToInt['sp']
+                        for i in range(0,len(lowerCasedInts)):
+                            label += lowerCasedInts[i]
+                            if i != len(lowerCasedInts):
+                                label += [sp]
+
+                        labels.append(label)
+
                         # wave file name
                         wave_file = parent_path + '%s/%s/%s-%s-%s.flac' % \
-                                                  (speaker, chapter, speaker, chapter, utterance)
+                                    (speaker, chapter, speaker, chapter, utterance)
                         wave_files.append(wave_file)
-
-                        # label index
-                        labels.append(data.str2index(' '.join(field[1:])))  # last column is text label
-                        #print(data.str2index(' '.join(field[1:])))
-
+    print("Skipped " + str(skipped) + "/" + str(total) + "utterances")
     # save results
     for i, (wave_file, label) in enumerate(zip(wave_files, labels)):
         fn = wave_file.split('/')[-1]
@@ -175,6 +194,8 @@ def process_libri(csv_file, category):
 
 def getPhonemeIntMaps():
     phonemeSet = set()
+    phonemeSet.add("<eps>")
+    phonemeSet.add("sp")
     a = nltk.corpus.cmudict.dict()
 
     keys = a.keys()
@@ -187,8 +208,11 @@ def getPhonemeIntMaps():
     phonemeToInt = {v: k for k, v in intToPhoneme.items()}
     return intToPhoneme,phonemeToInt
 
-def getPhonemes(word):
-    return nltk.corpus.cmudict.dict()[word][0]
+def getPhonemes(corpus,word):
+    try:
+        return corpus[word][0]
+    except:
+        return [False]
 
 def getWord(phonemes):
     corpus = nltk.corpus.cmudict.dict()
@@ -202,8 +226,6 @@ def getWord(phonemes):
             if newDist < distance:
                 closestWord = key
                 distance = newDist
-                print(closestWord)
-                print(distance)
 
     return closestWord
 
@@ -217,7 +239,7 @@ if not os.path.exists('asset/data/preprocess/mfcc'):
 
 if __name__ == "__main__":
     #intToPhoneme, phonemeToInt = getPhonemeIntMaps()
-    #print(getWord(getPhonemes('campaign')))
+    #print(getWord(getPhonemes(nltk.corpus.cmudict.dict(),'campaign')))
 
     # Run pre-processing for training
     csv_f = open('asset/data/preprocess/meta/train.csv', 'w')
