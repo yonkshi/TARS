@@ -1,24 +1,14 @@
 import numpy as np
 import pandas as pd
-import glob
-import csv
-import librosa
-import soundfile
+import glob,csv,librosa,soundfile,os
 import dataloader as data
-import os
 import subprocess
-
-__author__ = 'namju.kim@kakaobrain.com'
-
 
 # data path
 _data_path = "data/real/"
 
 
-#
 # process VCTK corpus
-#
-
 def process_vctk(csv_file):
 
     # create csv writer
@@ -64,10 +54,8 @@ def process_vctk(csv_file):
             np.save(target_filename, mfcc, allow_pickle=False)
 
 
-#
-# process LibriSpeech corpus
-#
 
+# process LibriSpeech corpus
 def process_libri(csv_file, category):
 
     parent_path = _data_path + 'LibriSpeech/' + category + '/'
@@ -129,9 +117,8 @@ def process_libri(csv_file, category):
 
             # save mfcc
             #np.save(target_filename, mfcc, allow_pickle=False)
-#
+
 # process TEDLIUM corpus
-#
 def convert_sph( sph, wav ):
     """Convert an sph file into wav format for further processing"""
     command = [
@@ -197,10 +184,7 @@ def process_ted(csv_file, category):
             # save mfcc
             np.save(target_filename, mfcc, allow_pickle=False)
 
-
-#
 # Create directories
-#
 if not os.path.exists('asset/data/preprocess'):
     os.makedirs('asset/data/preprocess')
 if not os.path.exists('asset/data/preprocess/meta'):
@@ -208,56 +192,9 @@ if not os.path.exists('asset/data/preprocess/meta'):
 if not os.path.exists('asset/data/preprocess/mfcc'):
     os.makedirs('asset/data/preprocess/mfcc')
 
-
-#
-# Run pre-processing for training
-#
-
-# LibriSpeech corpus for training
-csv_f = open('asset/data/preprocess/meta/train.csv', 'w')
-process_libri(csv_f, 'dev-clean')
-csv_f.close()
-
-# # VCTK corpus
-# csv_f = open('asset/data/preprocess/meta/train.csv', 'w')
-# process_vctk(csv_f)
-# csv_f.close()
-#
-# # LibriSpeech corpus for train
-# csv_f = open('asset/data/preprocess/meta/train.csv', 'a+')
-# process_libri(csv_f, 'train-clean-360')
-# csv_f.close()
-#
-# # TEDLIUM corpus for train
-# csv_f = open('asset/data/preprocess/meta/train.csv', 'a+')
-# process_ted(csv_f, 'train')
-# csv_f.close()
-
-#
-# Run pre-processing for validation
-#
-
-# LibriSpeech corpus for training
-# csv_f = open('asset/data/preprocess/meta/valid.csv', 'w')
-# process_libri(csv_f, 'dev-clean')
-# csv_f.close()
-
-# # TEDLIUM corpus for valid
-# csv_f = open('asset/data/preprocess/meta/valid.csv', 'a+')
-# process_ted(csv_f, 'dev')
-# csv_f.close()
-
-#
-# Run pre-processing for testing
-#
-
-# # LibriSpeech corpus for test
-# csv_f = open('asset/data/preprocess/meta/test.csv', 'w')
-# process_libri(csv_f, 'test-clean')
-# csv_f.close()
-#
-# # TEDLIUM corpus for test
-# csv_f = open('asset/data/preprocess/meta/test.csv', 'a+')
-# process_ted(csv_f, 'test')
-# csv_f.close()
-
+if __name__ == "__main__":
+    # Run pre-processing for training
+    csv_f = open('asset/data/preprocess/meta/train.csv', 'w')
+    process_libri(csv_f, 'dev-clean')
+    # process_vctk(csv_f) #uncomment and comment out libri to switch to VCTK
+    csv_f.close()
