@@ -1,6 +1,6 @@
 import numpy as np
 import dataloader as data
-import glob,csv,librosa,functools,soundfile,multiprocessing.pool,os,os.path,sklearn.preprocessing,nltk
+import glob,csv,librosa,functools,soundfile,multiprocessing.pool,os,os.path,sklearn.preprocessing,nltk,editdistance
 
 # data path
 _data_path = "data/real/"
@@ -145,6 +145,7 @@ def process_libri(csv_file, category):
 
                         # label index
                         labels.append(data.str2index(' '.join(field[1:])))  # last column is text label
+                        #print(data.str2index(' '.join(field[1:])))
 
     # save results
     for i, (wave_file, label) in enumerate(zip(wave_files, labels)):
@@ -172,9 +173,7 @@ def process_libri(csv_file, category):
             #np.save(target_filename, mfcc, allow_pickle=False)
 
 
-
-
-def getPhonemeList():
+def getPhonemeIntMaps():
     phonemeSet = set()
     a = nltk.corpus.cmudict.dict()
 
@@ -188,6 +187,26 @@ def getPhonemeList():
     phonemeToInt = {v: k for k, v in intToPhoneme.items()}
     return intToPhoneme,phonemeToInt
 
+def getPhonemes(word):
+    return nltk.corpus.cmudict.dict()[word][0]
+
+def getWord(phonemes):
+    corpus = nltk.corpus.cmudict.dict()
+    closestWord = 'NULL'
+    distance = 10000#Arbitrary large number
+
+    keys = corpus.keys()
+    for key in keys:
+        for i in range(0,len(corpus[key])):
+            newDist = editdistance.eval(phonemes,corpus[key][i])
+            if newDist < distance:
+                closestWord = key
+                distance = newDist
+                print(closestWord)
+                print(distance)
+
+    return closestWord
+
 # Create directories
 if not os.path.exists('asset/data/preprocess'):
     os.makedirs('asset/data/preprocess')
@@ -197,7 +216,8 @@ if not os.path.exists('asset/data/preprocess/mfcc'):
     os.makedirs('asset/data/preprocess/mfcc')
 
 if __name__ == "__main__":
-    intToPhoneme, phonemeToInt = getPhonemeList()
+    #intToPhoneme, phonemeToInt = getPhonemeIntMaps()
+    #print(getWord(getPhonemes('campaign')))
 
     # Run pre-processing for training
     csv_f = open('asset/data/preprocess/meta/train.csv', 'w')
