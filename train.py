@@ -1,19 +1,19 @@
 from __future__ import absolute_import, division, print_function
+import conf
+from dataloader import DataLoader, index2str
 import datetime
-
-from tensorflow.python import debug as tf_debug
+from model import *
 import numpy as np
 
-from dataloader import DataLoader, index2str
-from model import *
-import conf as conf
 
 def main():
     # Hyper params
     update_steps = 100000
     learning_rate = 1e-4
+    # Data path
+    csv_filepath = 'asset/data/preprocess-librispeech/meta/train.csv'
 
-    data = DataLoader(batch_size=conf.BATCH_SIZE)
+    data = DataLoader(batch_size=conf.BATCH_SIZE, csv_filepath=csv_filepath)
     labels, label_text, lab_len, x, seq_length_col, x_file_name = data.training_set()
 
     seq_length = tf.reshape(seq_length_col, [-1]) # 1-D vector
@@ -27,11 +27,8 @@ def main():
     print('model built')
     mean_loss = tf.reduce_mean(loss)
     loss_summary_op = tf.summary.scalar('loss', mean_loss, family='loss and accuracy')
-    #accuracy_op, predicted_out = calc_accuracy(labels,wavenet_out, seq_length)
-    accuracy_op = 0
-    accuracy_summary_op = tf.summary.scalar('accuracy', accuracy_op, family='loss and accuracy')
 
-    summary_op = tf.summary.merge([accuracy_summary_op, loss_summary_op])
+    summary_op = tf.summary.merge([loss_summary_op])
     run_name = datetime.datetime.now().strftime("May_%d_%I_%M%p")
     writer = tf.summary.FileWriter('./tb_logs/%s' % run_name)
     saver = tf.train.Saver()
@@ -48,26 +45,23 @@ def main():
 
             if step % 10 == 0:
                 #a,b,c,d, = sess.run([labels]) debugging pipeline output
-                _, loss_out, accuracy_out,summary, _x_out_, _wavenet_out_, _label_text_, _seq_len, _x_file_name = sess.run([opt_op, loss, accuracy_op, summary_op, x, wavenet_out, label_text, seq_length, x_file_name])
+                _, loss_out, summary, _x_out_, _wavenet_out_, _label_text_, _seq_len, _x_file_name = sess.run([opt_op, loss, summary_op, x, wavenet_out, label_text, seq_length, x_file_name])
                 print('step',step,'loss', np.mean(loss_out))
-                #if np.mean(loss_out) < 1:
-                    #print(x)
-                    #print(loss_out)
-                    #idx = _label_text_[0]
+                writer.add_summary(summary, step)
 
                 filename = _x_file_name[0].decode('utf-8')
                 label_idx = np.fromstring(_label_text_[0], np.int64)
                 label = index2str(label_idx)
-                #predicted = index2str(_predicted_out[0])
-
+                predicted, _ = keras.backend.ctc_decode(_wavenet_out_[0:1, :, :], _seq_len[0:1], greedy=False)
+                _predicted = sess.run([predicted])
+                _predicted = index2str(_predicted[0][0][0])
                 print('labels   :',label)
-                print('predicted:',predicted)
+                print('predicted:',_predicted)
                 print('filename:', filename)
+                print('')
 
                 #print(_wavenet_out_)
 
-                print('step', step, 'accuracy', accuracy_out)
-                writer.add_summary(summary, step)
             else:
                 _ = sess.run([opt_op])
 
@@ -80,16 +74,7 @@ def grad_tower(opt, labels, lab_len, x, seq_length):
     # Build model
     with tf.device('/gpu:0'):
         wavenet_out, wavenet_no_softmax = build_wavenet(x, voca_size=conf.ALPHA_SIZE)
-        loss  = tf.keras.backend.ctc_batch_cost(
-                    labels,
-                    wavenet_out,
-                    seq_length,
-                    lab_len
-        )
-        #loss = tf.nn.ctc_loss(labels, wavenet_no_softmax, seq_length,
-        #                      time_major=False, # batch x time x alpha_dimgt
-        #                      ctc_merge_repeated=False, # So we don't have to manually add <emp> at each repeating char
-        #                      ignore_longer_outputs_than_inputs=True) # predicted = batch x time x feat_dim
+        loss  = tf.keras.backend.ctc_batch_cost(labels, wavenet_out, seq_length, lab_len)
         loss_mean = tf.reduce_mean(loss)
         wavenet_weights = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='wavenet')
         grads_vars = opt.compute_gradients(loss_mean, wavenet_weights)

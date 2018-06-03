@@ -37,16 +37,14 @@ def str2index(str_):
 
 class DataLoader(object):
 
-    def __init__(self, batch_size=16, set_name='train'):
+    def __init__(self, csv_filepath, batch_size=16):
         # load meta file
         label, mfcc_files, mfcc_seq_len, mfccs, = [], [], [], []
-        with open(conf.PREPROCESSED_DATA + 'preprocess/meta/%s.csv' % set_name) as csv_file:
+        with open(csv_filepath) as csv_file:
             reader = csv.reader(csv_file, delimiter=',')
             for i, row in enumerate(reader):
-                if i >= conf.BATCH_SIZE:
-                    break
                 # mfcc file
-                mfcc_filename = conf.PREPROCESSED_DATA + 'preprocess/mfcc/' + row[0] + '.npy'
+                mfcc_filename = conf.PREPROCESSED_DATA + 'preprocess-librispeech/mfcc/' + row[0] + '.npy'
                 mfcc = np.load(mfcc_filename, allow_pickle=False).T
                 mfcc_seq_len.append(mfcc.shape[0]) # sequence length
                 mfccs.append(mfcc)
@@ -60,10 +58,10 @@ class DataLoader(object):
 
 
         # Zero mean and unit variance
-        mfcc_massive = np.vstack(mfccs)
-        sc = StandardScaler()
-        mfcc_massive_normalized = sc.fit_transform(mfcc_massive)
-        mfccs = np.split(mfcc_massive_normalized, mfcc_seq_len)
+        # mfcc_massive = np.vstack(mfccs)
+        # sc = StandardScaler()
+        # mfcc_massive_normalized = sc.fit_transform(mfcc_massive)
+        # mfccs = np.split(mfcc_massive_normalized, mfcc_seq_len)
 
         # to constant tensor
         label_t = tf.convert_to_tensor(label)
@@ -79,7 +77,7 @@ class DataLoader(object):
         dataset = datasource.map(lambda x, y, z: tf.py_func(func=self._load_mfcc, inp=[x, y, z], Tout=[tf.int32, tf.string, tf.int32, tf.float32, tf.int32, tf.string]),
                               num_parallel_calls=64)
         dataset = dataset.repeat()
-        #dataset = dataset.shuffle(1000)
+        dataset = dataset.shuffle(1000)
         dataset = dataset.padded_batch(batch_size,
                                        padded_shapes=([None],[],1, [None, conf.FEATURE_DIM],1, []),
                                        padding_values=(27, '', 0, 0.0, 0, '')) # 27 is <EMP> Hard coded
@@ -104,7 +102,7 @@ class DataLoader(object):
         label_encoded = label_new.astype('int32')
         lab_len = np.array(label_encoded.shape).astype('int32')[0]  # int32
 
-        return label_encoded, label,lab_len, mfcc, [seq_len], mfcc_file  # stupid batch
+        return label_encoded, label,[lab_len], mfcc, [seq_len], mfcc_file  # stupid batch
 
     def _augment_speech(self, mfcc):
 
