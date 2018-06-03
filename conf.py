@@ -12,3 +12,4 @@ for i, ch in enumerate(ALPHABETS):
 ALPHA_SIZE = len(ALPHABETS)
 
 CHAR_SIZE = 700
+NUM_GPU = 2

@@ -55,10 +55,6 @@ class DataLoader(object):
                 label.append(np.asarray(row[1:], dtype=np.int).tostring())
 
 
-
-
-
-
         # Zero mean and unit variance
         # mfcc_massive = np.vstack(mfccs)
         # sc = StandardScaler()

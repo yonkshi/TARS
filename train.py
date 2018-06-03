@@ -1,17 +1,15 @@
-from __future__ import absolute_import, division, print_function
 import datetime
-
-from tensorflow.python import debug as tf_debug
+import tensorflow as tf
 import numpy as np
-
 from dataloader import DataLoader, index2str
-from model import *
+from model import build_wavenet, what_the_hell
 import conf as conf
 
 def main():
     # Hyper params
     update_steps = 100_000
     learning_rate = 1e-3
+    num_gpu = conf.NUM_GPU
 
     data = DataLoader(batch_size=conf.BATCH_SIZE)
     labels, label_text, x, seq_length_col, x_file_name = data.training_set()
@@ -20,9 +18,40 @@ def main():
 
     opt = tf.train.AdamOptimizer(learning_rate=learning_rate) # Try different gradient
 
-    grads_vars, loss, wavenet_out = grad_tower(opt, labels, x, seq_length)
+    #grads_vars, loss, wavenet_out = grad_tower(opt, labels, x, seq_length)
 
-    opt_op = opt.apply_gradients(grads_vars)
+    # Multi GPU support
+    def split_tensor_for_gpu(t):
+        return tf.split(t, num_gpu)
+
+    # Splitting batch for multiple GPUs
+    x_gpus = split_tensor_for_gpu(x)
+    seq_length_gpus = split_tensor_for_gpu(seq_length)
+    labels_gpu = tf.sparse_split(sp_input=labels, num_split=num_gpu, axis=0)
+
+    # TODO double splitted values
+    grads = []
+    loss = 0
+    for i in range(num_gpu):
+        # Runs on GPU
+
+        grads_vars_gpu, loss_gpu, wavenet_out = grad_tower(i, opt, labels_gpu[i], x_gpus[i], seq_length_gpus[i])
+
+        # normalize and element wise add
+        if not grads:
+            grads = [g_grad / num_gpu for g_grad, g_vars in grads_vars_gpu]
+        else:
+            # Element wise add to G_grads collection, G_grads is same size as G_grads_vars' grads
+            grads = [g_grad / num_gpu + grads[j] for j, (g_grad, g_vars) in enumerate(grads_vars_gpu)]
+
+        loss = loss_gpu / num_gpu + loss
+
+
+    vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='wavenet')
+
+    opt_op = opt.apply_gradients(zip(grads, vars))
+
+    # Stuff for summary/logging, not really essential to implementation
     print('model built')
     mean_loss = tf.reduce_mean(loss)
     loss_summary_op = tf.summary.scalar('loss', mean_loss, family='loss and accuracy')
@@ -38,12 +67,15 @@ def main():
     densified_label = tf.sparse_tensor_to_dense(labels)
     dense_predicted = tf.sparse_tensor_to_dense(predicted_out[0])
 
+
+
     with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
         sess.run(tf.global_variables_initializer())
         sess.run(data.iterator.initializer)
 
+        # Main loop
         for step in range(update_steps):
-
+            # Print out summary every 10 steps
             if step % 10 == 0:
                 #a,b,c,d, = sess.run([labels]) debugging pipeline output
                 _, loss_out, accuracy_out,summary, _x_out_, _wavenet_out_, _label_text_, _densified_label_, _seq_len, _x_file_name, _predicted_out = sess.run([opt_op, loss, accuracy_op, summary_op, x, wavenet_out, label_text, densified_label, seq_length, x_file_name, dense_predicted])
@@ -54,6 +86,8 @@ def main():
                 predicted = index2str(_predicted_out[0])
                 print('labels   :', label)
                 print('predicted:', predicted)
+
+                # Debugging mean 0 issue!
                 for i in range(conf.BATCH_SIZE):
                     if loss_out[i] == 0.0:
                         print('>>>>>>> zero loss')
@@ -94,19 +128,24 @@ def main():
 
 
 
-def grad_tower(opt, labels, x, seq_length):
+def grad_tower(gpu_num, opt, labels, x, seq_length):
     # Build model
-    with tf.device('/gpu:0'):
-        wavenet_out, wavenet_no_softmax = build_wavenet(x, voca_size=conf.ALPHA_SIZE)
-        loss = tf.nn.ctc_loss(labels, wavenet_no_softmax, seq_length,
-                              time_major=False, # batch x time x alpha_dimgt
-                              ctc_merge_repeated=False, # So we don't have to manually add <emp> at each repeating char
-                              ignore_longer_outputs_than_inputs=True) # predicted = batch x time x feat_dim
-        loss_mean = tf.reduce_sum(loss)
-        wavenet_weights = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='wavenet')
-        grads_vars = opt.compute_gradients(loss_mean, wavenet_weights)
+    with tf.device('/gpu:%d' % gpu_num):
+        with tf.name_scope('gpu_ZZZZZZZ_%d' % gpu_num):
+            reuse = gpu_num != 0 # initalize first wavenet
+            wavenet_out = what_the_hell(x, voca_size=conf.ALPHA_SIZE, reuse=reuse)
 
-        return grads_vars, loss, wavenet_no_softmax
+            # loss = tf.nn.ctc_loss(labels, wavenet_no_softmax, seq_length,
+            #                       time_major=False, # batch x time x alpha_dimgt
+            #                       ctc_merge_repeated=False, # So we don't have to manually add <emp> at each repeating char
+            #                       ignore_longer_outputs_than_inputs=True) # predicted = batch x time x feat_dim
+            loss_mean = tf.reduce_mean(wavenet_out)
+            all_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
+
+            wavenet_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='wavenet')
+            grads_vars = opt.compute_gradients(loss_mean, wavenet_vars)
+
+            return grads_vars, loss, wavenet_no_softmax
 
 
 def calc_accuracy(labels, wavenet_out, seq_len ):
@@ -128,5 +167,6 @@ def calc_accuracy(labels, wavenet_out, seq_len ):
     accuracy = (1 - tf.count_nonzero(d, dtype=tf.int32) / tf.size(y)) * 100
 
     return accuracy, predicted_out
+
 if __name__ == '__main__':
     main()
