@@ -54,7 +54,7 @@ def main():
         for step in range(update_steps):
             # compute summary every 10 steps
             if step % 10 == 0:
-                _, loss_out, accuracy_out,summary, _x_out_, _wavenet_out_, _label_text_, _densified_label_, _seq_len, _x_file_name, _predicted_out = sess.run([opt_op, loss, accuracy_op, summary_op, x, wavenet_out, label_text, densified_label, seq_length, x_file_name, dense_predicted])
+                _, loss_out, accuracy_out, summary, _x_out_, _wavenet_out_, _label_text_, _densified_label_, _seq_len, _x_file_name, _predicted_out = sess.run([opt_op, loss, accuracy_op, summary_op, x, wavenet_out, label_text, densified_label, seq_length, x_file_name, dense_predicted])
                 print('step', step, 'loss', np.mean(loss_out), 'accuracy', accuracy_out)
                 writer.add_summary(summary, step)
 
@@ -134,5 +134,7 @@ def calc_accuracy(labels, wavenet_out, seq_len):
     predicted_out, _ = tf.nn.ctc_beam_search_decoder(wavenet_out, seq_len)
     accuracy = tf.edit_distance(predicted_out[0], tf.cast(labels, tf.int64))
     return accuracy, predicted_out[0]
+
+
 if __name__ == '__main__':
     main()
