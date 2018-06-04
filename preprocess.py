@@ -147,13 +147,13 @@ def process_libri(csv_file, category):
                         utterance = field[0]  # first column is utterance id
 
                         # label index
-                        lowerCasedInts = [[phonemeToInt[phoneme] if phoneme is not False else False for phoneme in getPhonemes(corpus,x.lower())] for x in field[1:]]
+                        lowerCasedInts = [[PHONEMES_DICT[phoneme] if phoneme is not False else False for phoneme in getPhonemes(corpus,x.lower())] for x in field[1:]]
                         if [False] in lowerCasedInts:#If word did not exist in the cmudict skip to next sentence
                             skipped += 1
                             continue
 
                         label = []
-                        sp = phonemeToInt['sp']
+                        sp = PHONEMES_DICT['sp']
                         for i in range(0,len(lowerCasedInts)):
                             label += lowerCasedInts[i]
                             if i != len(lowerCasedInts):
@@ -189,7 +189,7 @@ def process_libri(csv_file, category):
             writer.writerow([fn] + label)
 
             # save mfcc
-            #np.save(target_filename, mfcc, allow_pickle=False)
+            np.save(target_filename, mfcc, allow_pickle=False)
 
 
 def getPhonemeIntMaps():
