@@ -34,7 +34,8 @@ def main():
     # Summary related stuff, not essential to op
     mean_loss = tf.reduce_mean(loss)
     loss_summary_op = tf.summary.scalar('loss', mean_loss, family='loss and accuracy')
-    accuracy_op, predicted_out = calc_accuracy(labels,wavenet_out, seq_length)
+    accuracy_op, predicted_out = calc_accuracy(labels, wavenet_out, seq_length)
+    accuracy_op = 1 - tf.reduce_mean(accuracy_op)
     accuracy_summary_op = tf.summary.scalar('accuracy', accuracy_op, family='loss and accuracy')
 
     summary_op = tf.summary.merge([accuracy_summary_op, loss_summary_op])
@@ -44,7 +45,7 @@ def main():
 
     # DEBUGING STUFF
     densified_label = tf.sparse_tensor_to_dense(labels)
-    dense_predicted = tf.sparse_tensor_to_dense(predicted_out[0])
+    dense_predicted = tf.sparse_tensor_to_dense(predicted_out)
 
     with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
         sess.run(tf.global_variables_initializer())
@@ -54,7 +55,7 @@ def main():
             # compute summary every 10 steps
             if step % 10 == 0:
                 _, loss_out, accuracy_out,summary, _x_out_, _wavenet_out_, _label_text_, _densified_label_, _seq_len, _x_file_name, _predicted_out = sess.run([opt_op, loss, accuracy_op, summary_op, x, wavenet_out, label_text, densified_label, seq_length, x_file_name, dense_predicted])
-                print('step', step, 'loss', np.mean(loss_out))
+                print('step', step, 'loss', np.mean(loss_out), 'accuracy', accuracy_out)
                 writer.add_summary(summary, step)
 
                 label_idx = np.fromstring(_label_text_[0], np.int64)
@@ -128,28 +129,10 @@ def grad_tower(opt, labels, x, seq_length):
         return grads_vars, loss, wavenet_no_softmax
 
 
-def calc_accuracy(labels, wavenet_out, seq_len ):
-    # Used to visualize trainig progress
-    wavenet_timemajor = tf.transpose(wavenet_out,[1,0,2]) # Time major for ctc
-    predicted_out, _ = tf.nn.ctc_beam_search_decoder(wavenet_timemajor, seq_len, merge_repeated=False) # ,
-    # to dense tensor
-
-    # CTC Decoder
-    p = tf.sparse_to_dense(predicted_out[0].indices, predicted_out[0].dense_shape, predicted_out[0].values)
-    y = tf.sparse_to_dense(labels.indices, labels.dense_shape, labels.values)
-    p = tf.cast(p, dtype=tf.int32, name='casted_p')
-
-    # Computing character level difference
-    # TODO Use edit distance instead of alignment distance
-    y_len = tf.shape(y)[1]
-    p_len = tf.shape(p)[1]
-    pad_dim = tf.abs(tf.shape(y)[1] - tf.shape(p)[1])
-
-    y, p = tf.cond(y_len > p_len, lambda: (y, tf.pad(p, [[0, 0], [0, pad_dim]])), lambda:(tf.pad(y, [[0, 0], [0, pad_dim]]), p))
-
-    d = p - y
-    accuracy = (1 - tf.count_nonzero(d, dtype=tf.int32) / tf.size(y)) * 100
-
-    return accuracy, predicted_out
+def calc_accuracy(labels, wavenet_out, seq_len):
+    wavenet_out = tf.transpose(wavenet_out, [1,0,2])
+    predicted_out, _ = tf.nn.ctc_beam_search_decoder(wavenet_out, seq_len)
+    accuracy = tf.edit_distance(predicted_out[0], tf.cast(labels, tf.int64))
+    return accuracy, predicted_out[0]
 if __name__ == '__main__':
     main()
