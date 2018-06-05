@@ -9,10 +9,10 @@ from sklearn.preprocessing import StandardScaler
 # convert index list to string
 def index2str(index_list):
     # transform label index to character
-    str_ = ''
+    str_ = []
     for ch in index_list:
         if ch <= 77:
-            str_ += conf.ALPHABETS[ch]
+            str_.append(conf.PHONEMES[ch])
         # else:  # <EOS>
         #     break
     return str_
@@ -29,7 +29,7 @@ def str2index(str_):
     res = []
     for ch in str_:
         try:
-            res.append(conf.ALPHABETS_DICT[ch])
+            res.append(conf.PHONEMES_DICT[ch])
         except KeyError:
             # drop OOV
             pass
