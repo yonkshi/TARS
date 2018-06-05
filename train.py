@@ -4,13 +4,14 @@ import datetime
 from tensorflow.python import debug as tf_debug
 import numpy as np
 
+from preprocess import getSentence
 from dataloader import DataLoader, index2str
 from model import *
 import conf as conf
 
 def main():
     # Hyper params
-    update_steps = 100_000
+    update_steps = 100_000_000
     learning_rate = 1e-3
 
     # Data pipeline initialization
@@ -59,10 +60,15 @@ def main():
                 writer.add_summary(summary, step)
 
                 label_idx = np.fromstring(_label_text_[0], np.int64)
+                # get phoneme array
                 label = index2str(label_idx)
                 predicted = index2str(_predicted_out[0])
-                print('labels   :', label)
-                print('predicted:', predicted)
+
+                # Convert phoneme array into sentences
+                label_sentence = ' '.join(getSentence(label))
+                predicted_sentence = ' '.join(getSentence(predicted))
+                print('labels   :', label_sentence)
+                print('predicted:', predicted_sentence)
 
                 # Everything below are used for debugging loss
                 for i in range(conf.BATCH_SIZE):

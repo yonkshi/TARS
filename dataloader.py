@@ -11,7 +11,7 @@ def index2str(index_list):
     # transform label index to character
     str_ = []
     for ch in index_list:
-        if ch <= 77:
+        if ch <= conf.PHONEME_SIZE:
             str_.append(conf.PHONEMES[ch])
         # else:  # <EOS>
         #     break
