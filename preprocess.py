@@ -215,6 +215,9 @@ def getPhonemes(corpus,word):
         return [False]
 
 def getWord(phonemes):
+    if phonemes == []:
+        return 'NULL'
+
     corpus = nltk.corpus.cmudict.dict()
     closestWord = 'NULL'
     distance = 10000#Arbitrary large number
@@ -228,6 +231,24 @@ def getWord(phonemes):
                 distance = newDist
 
     return closestWord
+
+def getSentence(phonemes):
+    phonemeWords = []
+    phonemeWord = []
+    for phoneme in phonemes:
+        if phoneme == 'sp':
+            if phonemeWord != []:
+                phonemeWords.append(phonemeWord)
+                phonemeWord = []
+        else:
+            phonemeWord.append(phoneme)
+    phonemeWords.append(phonemeWord)
+
+    words = []
+    for phonemeWord in phonemeWords:
+        words.append(getWord(phonemeWord))
+
+    return words
 
 # Create directories
 if not os.path.exists('asset/data/preprocess'):
