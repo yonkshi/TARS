@@ -211,6 +211,7 @@ def getPhonemeIntMaps():
 def getPhonemes(corpus,word):
     try:
         best_phoneme_set = corpus[word][0]
+        return best_phoneme_set
         shortest_len = 9999
         for phoneme_set in corpus[word]:
             words = phonemeToWords(phoneme_set)
