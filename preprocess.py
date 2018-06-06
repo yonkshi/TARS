@@ -189,7 +189,7 @@ def process_libri(csv_file, category):
             writer.writerow([fn] + label)
 
             # save mfcc
-            np.save(target_filename, mfcc, allow_pickle=False)
+            # np.save(target_filename, mfcc, allow_pickle=False)
 
 
 def getPhonemeIntMaps():
