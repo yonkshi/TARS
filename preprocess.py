@@ -146,21 +146,21 @@ def process_libri(csv_file, category):
                         field = field[2].split()  # split field[2] by ' '
                         utterance = field[0]  # first column is utterance id
 
-                        # label index
-                        lowerCasedInts = [[PHONEMES_DICT[phoneme] if phoneme is not False else False for phoneme in getPhonemes(corpus,x.lower())] for x in field[1:]]
-                        if [False] in lowerCasedInts:#If word did not exist in the cmudict skip to next sentence
-                            skipped += 1
-                            continue
+                        # # label index
+                        # lowerCasedInts = [[PHONEMES_DICT[phoneme] if phoneme is not False else False for phoneme in getPhonemes(corpus,x.lower())] for x in field[1:]]
+                        # if [False] in lowerCasedInts:#If word did not exist in the cmudict skip to next sentence
+                        #     skipped += 1
+                        #     continue
+                        #
+                        # label = []
+                        # sp = PHONEMES_DICT['sp']
+                        # for i in range(0,len(lowerCasedInts)):
+                        #     label += lowerCasedInts[i]
+                        #     if i != len(lowerCasedInts):
+                        #         label += [sp]
 
-                        label = []
-                        sp = PHONEMES_DICT['sp']
-                        for i in range(0,len(lowerCasedInts)):
-                            label += lowerCasedInts[i]
-                            if i != len(lowerCasedInts):
-                                label += [sp]
-
-                        labels.append(label)
-
+                        #labels.append(label)
+                        labels.append(data.str2index(' '.join(field[1:])))
                         # wave file name
                         wave_file = parent_path + '%s/%s/%s-%s-%s.flac' % \
                                     (speaker, chapter, speaker, chapter, utterance)
