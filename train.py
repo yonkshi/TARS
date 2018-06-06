@@ -53,11 +53,11 @@ def main():
     with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
         sess.run(tf.global_variables_initializer())
         sess.run(data.iterator.initializer)
-        #saver.restore(sess, tf.train.latest_checkpoint('saved/'))
+        saver.restore(sess, tf.train.latest_checkpoint('saved/'))
 
         for step in range(update_steps):
             # compute summary every 10 steps
-            if step % 10 == 0:
+            if step % 100 == 0:
                 _, loss_out, accuracy_out, summary, _x_out_, _wavenet_out_, _label_text_, _densified_label_, _seq_len, _x_file_name, _predicted_out = sess.run([opt_op, loss, accuracy_op, summary_op, x, wavenet_out, label_text, densified_label, seq_length, x_file_name, dense_predicted])
                 print('step', step, 'loss', np.mean(loss_out), 'accuracy', accuracy_out)
                 writer.add_summary(summary, step)
