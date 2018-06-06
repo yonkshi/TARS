@@ -5,7 +5,7 @@ import glob,csv,librosa,functools,soundfile,multiprocessing.pool,os,os.path,skle
 
 # data path
 _data_path = "data/real/"
-
+cmudict_phoneme_to_words = {}
 # process VCTK corpus
 def process_speaker_folder(speaker, audio_directory, transcription_directory,
                            target_directory):
@@ -210,9 +210,39 @@ def getPhonemeIntMaps():
 
 def getPhonemes(corpus,word):
     try:
-        return corpus[word][0]
+        best_phoneme_set = corpus[word][0]
+        shortest_len = 9999
+        for phoneme_set in corpus[word]:
+            words = phonemeToWords(phoneme_set)
+            p_len = len(words)
+            if p_len < shortest_len:
+                shortest_len = p_len
+                best_phoneme_set = phoneme_set
+        return best_phoneme_set
     except:
         return [False]
+
+def phonemeToWords(pnms):
+    p_hash = phoneme_hash(pnms)
+    words = cmudict_phoneme_to_words[p_hash]
+    return words
+def gen_reverse_dict():
+    corpus = nltk.corpus.cmudict.dict()
+    global cmudict_phoneme_to_words
+    for word, phonemes in corpus.items():
+        for phoneme in phonemes:
+            p_hash = phoneme_hash(phoneme)
+            if p_hash not in  cmudict_phoneme_to_words:
+                cmudict_phoneme_to_words[p_hash] = []
+            cmudict_phoneme_to_words[p_hash].append(word)
+
+    print('reverse phoneme dict generated')
+
+def phoneme_hash(ph):
+    '''phonemes to hash'''
+    s = ''.join(ph)
+    h = hash(s)
+    return h
 
 def getWord(phonemes):
     if phonemes == []:
@@ -259,6 +289,7 @@ if not os.path.exists('asset/data/preprocess/mfcc'):
     os.makedirs('asset/data/preprocess/mfcc')
 
 if __name__ == "__main__":
+    gen_reverse_dict()
     #intToPhoneme, phonemeToInt = getPhonemeIntMaps()
     #print(getWord(getPhonemes(nltk.corpus.cmudict.dict(),'campaign')))
 
