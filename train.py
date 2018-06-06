@@ -76,7 +76,7 @@ def main():
 
                 # Everything below are used for debugging loss
                 print('=======\n\n\n')
-            elif step % 10 == 0:
+            elif step % 100 == 0:
                 _, loss_out, accuracy_out, summary = sess.run([opt_op, loss, accuracy_op, summary_op ])
                 print('step', step, 'loss', np.mean(loss_out), 'accuracy', accuracy_out)
                 writer.add_summary(summary, step)
