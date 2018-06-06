@@ -189,7 +189,7 @@ def process_libri(csv_file, category):
             writer.writerow([fn] + label)
 
             # save mfcc
-            np.save(target_filename, mfcc, allow_pickle=False)
+            # np.save(target_filename, mfcc, allow_pickle=False)
 
 
 def getPhonemeIntMaps():
@@ -211,7 +211,6 @@ def getPhonemeIntMaps():
 def getPhonemes(corpus,word):
     try:
         best_phoneme_set = corpus[word][0]
-        return best_phoneme_set
         shortest_len = 9999
         for phoneme_set in corpus[word]:
             words = phonemeToWords(phoneme_set)
@@ -295,7 +294,8 @@ if __name__ == "__main__":
     #print(getWord(getPhonemes(nltk.corpus.cmudict.dict(),'campaign')))
 
     # Run pre-processing for training
-    csv_f = open('asset/data/preprocess/meta/phoneme.csv', 'w')
-    process_libri(csv_f, 'dev-clean')
+    csv_f = open('asset/data/preprocess/meta/augmented.csv', 'w')
+    #process_libri(csv_f, 'dev-clean')
+    process_libri(csv_f, 'train-clean-100')
     # process_vctk(csv_f) #uncomment and comment out libri to switch to VCTK
     csv_f.close()
