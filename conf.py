@@ -1,4 +1,7 @@
 import sys
+
+MODE = 'character_level_training'
+
 PREPROCESSED_DATA = 'asset/data/'
 BATCH_SIZE = 16
 FEATURE_DIM = 20 # Features in MFCC
@@ -13,7 +16,7 @@ for i, ch in enumerate(ALPHABETS):
 ALPHA_SIZE = len(ALPHABETS)
 
 CHAR_SIZE = 700
-if sys.argv[0] == 'character_level_training':
+if sys.argv[0] == 'character_level_training' or MODE == 'character_level_training':
     PHONEMES = [' ', 'a', 'b', 'c', 'd', 'e', 'f', 'g',
                  'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q',
                  'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '<EMP>']

@@ -295,8 +295,8 @@ if __name__ == "__main__":
     #print(getWord(getPhonemes(nltk.corpus.cmudict.dict(),'campaign')))
 
     # Run pre-processing for training
-    csv_f = open('asset/data/preprocess/meta/phoneme.csv', 'w')
-    #process_libri(csv_f, 'dev-clean')
-    process_libri(csv_f, 'train-clean-100')
+    csv_f = open('asset/data/preprocess/meta/character.csv', 'w')
+    process_libri(csv_f, 'dev-clean')
+    #process_libri(csv_f, 'train-clean-100')
     # process_vctk(csv_f) #uncomment and comment out libri to switch to VCTK
     csv_f.close()
