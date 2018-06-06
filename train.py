@@ -70,8 +70,10 @@ def main():
                 # Convert phoneme array into sentences
                 #label_sentence = ' '.join(getSentence(label))
                 #predicted_sentence = ' '.join(getSentence(predicted))
+
                 print('labels   :', label)
                 print('predicted:', predicted)
+
 
                 # Everything below are used for debugging loss
                 for i in range(conf.BATCH_SIZE):
@@ -105,7 +107,7 @@ def main():
 
                         print('end <<<<')
                         print('>>>>>\n\n\n\n')
-
+                print('=======\n\n\n')
             else:
                 _ = sess.run([opt_op])
 
