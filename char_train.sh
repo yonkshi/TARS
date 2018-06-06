@@ -1,0 +1,2 @@
+export CUDA_VISIBLE_DEVICES=0
+python train.py character_level_training

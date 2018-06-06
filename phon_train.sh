@@ -1,0 +1,2 @@
+export CUDA_VISIBLE_DEVICES=1
+python train.py phoneme_level_training
