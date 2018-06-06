@@ -1,5 +1,5 @@
-from __future__ import absolute_import, division, print_function
 import datetime
+import sys
 
 from tensorflow.python import debug as tf_debug
 import numpy as np
@@ -13,9 +13,10 @@ def main():
     # Hyper params
     update_steps = 100_000_000
     learning_rate = 1e-3
+    training_mode = conf.MODE
 
     # Data pipeline initialization
-    data = DataLoader(batch_size=conf.BATCH_SIZE)
+    data = DataLoader(batch_size=conf.BATCH_SIZE, set_name=training_mode)
     labels, label_text, x, seq_length_col, x_file_name = data.training_set()
 
     # Bug fix because seq_length does not support
@@ -41,7 +42,7 @@ def main():
 
     summary_op = tf.summary.merge([accuracy_summary_op, loss_summary_op])
     run_name = datetime.datetime.now().strftime("May_%d_%I_%M%p")
-    writer = tf.summary.FileWriter('./tb_logs/%s' % run_name)
+    writer = tf.summary.FileWriter('./tb_logs/%s' % (training_mode + run_name))
     # Get all wavenet parameters
     wavenet_weights = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='wavenet')
     saver = tf.train.Saver(wavenet_weights)
@@ -59,7 +60,7 @@ def main():
             # compute summary every 10 steps
             if step % 1000 == 0:
                 _, loss_out, accuracy_out, summary, _x_out_, _wavenet_out_, _label_text_, _densified_label_, _seq_len, _x_file_name, _predicted_out = sess.run([opt_op, loss, accuracy_op, summary_op, x, wavenet_out, label_text, densified_label, seq_length, x_file_name, dense_predicted])
-                print('step', step, 'loss', np.mean(loss_out), 'accuracy', accuracy_out)
+                print(training_mode, 'step', step, 'loss', np.mean(loss_out), 'accuracy', accuracy_out)
                 writer.add_summary(summary, step)
 
                 label_idx = np.fromstring(_label_text_[0], np.int64)
