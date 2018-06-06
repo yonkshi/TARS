@@ -42,7 +42,9 @@ def main():
     summary_op = tf.summary.merge([accuracy_summary_op, loss_summary_op])
     run_name = datetime.datetime.now().strftime("May_%d_%I_%M%p")
     writer = tf.summary.FileWriter('./tb_logs/%s' % run_name)
-    saver = tf.train.Saver()
+    # Get all wavenet parameters
+    wavenet_weights = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='wavenet')
+    saver = tf.train.Saver(wavenet_weights)
 
     # DEBUGING STUFF
     densified_label = tf.sparse_tensor_to_dense(labels)
@@ -51,6 +53,7 @@ def main():
     with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
         sess.run(tf.global_variables_initializer())
         sess.run(data.iterator.initializer)
+        saver.restore(sess, tf.train.latest_checkpoint('saved/'))
 
         for step in range(update_steps):
             # compute summary every 10 steps
@@ -65,10 +68,10 @@ def main():
                 predicted = index2str(_predicted_out[0])
 
                 # Convert phoneme array into sentences
-                label_sentence = ' '.join(getSentence(label))
-                predicted_sentence = ' '.join(getSentence(predicted))
-                print('labels   :', label_sentence)
-                print('predicted:', predicted_sentence)
+                #label_sentence = ' '.join(getSentence(label))
+                #predicted_sentence = ' '.join(getSentence(predicted))
+                print('labels   :', label)
+                print('predicted:', predicted)
 
                 # Everything below are used for debugging loss
                 for i in range(conf.BATCH_SIZE):
