@@ -53,7 +53,7 @@ def main():
     with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
         sess.run(tf.global_variables_initializer())
         sess.run(data.iterator.initializer)
-        saver.restore(sess, tf.train.latest_checkpoint('saved/'))
+        #saver.restore(sess, tf.train.latest_checkpoint('saved/'))
 
         for step in range(update_steps):
             # compute summary every 10 steps
@@ -74,39 +74,7 @@ def main():
                 print('labels   :', label)
                 print('predicted:', predicted)
 
-
                 # Everything below are used for debugging loss
-                for i in range(conf.BATCH_SIZE):
-                    if loss_out[i] == 0.0:
-                        print('>>>>>>> zero loss')
-
-                        print('loss', loss_out[i])
-
-                        __x_out = _x_out_[i]
-                        __wavenet_out = _wavenet_out_[i]
-                        __label_text_ = _label_text_[i]
-                        __densified_label_ = _densified_label_[i]
-                        __seq_len = _seq_len[i]
-                        __predicted_out = _predicted_out[i]
-
-                        filename = _x_file_name[i].decode('utf-8')
-                        label_idx = np.fromstring(_label_text_[i], np.int64)
-                        label = index2str(label_idx)
-                        predicted = index2str(_predicted_out[i])
-
-                        print('labels   :', label)
-                        print('predicted:', predicted)
-
-                        print('label length', len(label))
-
-                        print('filename:', filename)
-
-                        print('sequence_len:', _seq_len[i])
-                        print('_wavenet_out_: ', _wavenet_out_[i])
-
-
-                        print('end <<<<')
-                        print('>>>>>\n\n\n\n')
                 print('=======\n\n\n')
             else:
                 _ = sess.run([opt_op])

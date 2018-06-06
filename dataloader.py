@@ -85,7 +85,8 @@ class DataLoader(object):
                                        padded_shapes=([None],[], [None, conf.FEATURE_DIM],1, []),
                                        padding_values=(27, '', 0.0, 0, '')) # 27 is <EMP> Hard coded
         # Sparse matrix conversion
-        dataset = dataset.map(self.to_sparse_representation)
+        dataset = dataset.map(self.to_sparse_representation, num_parallel_calls=24)
+        dataset = dataset.prefetch(100)
 
         # Iterator used for initliazation
         self.dataset = dataset
