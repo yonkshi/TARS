@@ -211,6 +211,7 @@ def getPhonemeIntMaps():
 def getPhonemes(corpus,word):
     try:
         best_phoneme_set = corpus[word][0]
+        return best_phoneme_set
         shortest_len = 9999
         for phoneme_set in corpus[word]:
             words = phonemeToWords(phoneme_set)
@@ -294,7 +295,7 @@ if __name__ == "__main__":
     #print(getWord(getPhonemes(nltk.corpus.cmudict.dict(),'campaign')))
 
     # Run pre-processing for training
-    csv_f = open('asset/data/preprocess/meta/train.csv', 'w')
+    csv_f = open('asset/data/preprocess/meta/phoneme.csv', 'w')
     process_libri(csv_f, 'dev-clean')
     # process_vctk(csv_f) #uncomment and comment out libri to switch to VCTK
     csv_f.close()
