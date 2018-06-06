@@ -1,6 +1,6 @@
 import sys
 
-MODE = 'character_level_training'
+MODE = 'phoneme_level_training'
 
 PREPROCESSED_DATA = 'asset/data/'
 BATCH_SIZE = 16

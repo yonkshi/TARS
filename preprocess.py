@@ -146,21 +146,21 @@ def process_libri(csv_file, category):
                         field = field[2].split()  # split field[2] by ' '
                         utterance = field[0]  # first column is utterance id
 
-                        # # label index
-                        # lowerCasedInts = [[PHONEMES_DICT[phoneme] if phoneme is not False else False for phoneme in getPhonemes(corpus,x.lower())] for x in field[1:]]
-                        # if [False] in lowerCasedInts:#If word did not exist in the cmudict skip to next sentence
-                        #     skipped += 1
-                        #     continue
-                        #
-                        # label = []
-                        # sp = PHONEMES_DICT['sp']
-                        # for i in range(0,len(lowerCasedInts)):
-                        #     label += lowerCasedInts[i]
-                        #     if i != len(lowerCasedInts):
-                        #         label += [sp]
+                        # label index
+                        lowerCasedInts = [[PHONEMES_DICT[phoneme] if phoneme is not False else False for phoneme in getPhonemes(corpus,x.lower())] for x in field[1:]]
+                        if [False] in lowerCasedInts:#If word did not exist in the cmudict skip to next sentence
+                            skipped += 1
+                            continue
 
-                        #labels.append(label)
-                        labels.append(data.str2index(' '.join(field[1:])))
+                        label = []
+                        sp = PHONEMES_DICT['sp']
+                        for i in range(0,len(lowerCasedInts)):
+                            label += lowerCasedInts[i]
+                            if i != len(lowerCasedInts):
+                                label += [sp]
+
+                        labels.append(label)
+                        # labels.append(data.str2index(' '.join(field[1:])))
                         # wave file name
                         wave_file = parent_path + '%s/%s/%s-%s-%s.flac' % \
                                     (speaker, chapter, speaker, chapter, utterance)
@@ -295,8 +295,8 @@ if __name__ == "__main__":
     #print(getWord(getPhonemes(nltk.corpus.cmudict.dict(),'campaign')))
 
     # Run pre-processing for training
-    csv_f = open('asset/data/preprocess/meta/character.csv', 'w')
-    process_libri(csv_f, 'dev-clean')
-    #process_libri(csv_f, 'train-clean-100')
+    csv_f = open('asset/data/preprocess/meta/phoneme_training.csv', 'w')
+    # process_libri(csv_f, 'dev-clean')
+    process_libri(csv_f, 'train-clean-100')
     # process_vctk(csv_f) #uncomment and comment out libri to switch to VCTK
     csv_f.close()
